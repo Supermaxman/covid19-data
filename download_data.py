@@ -45,9 +45,10 @@ def acquire_from_twitter_api(tweet_ids, output_file, error_file, args):
             num_downloaded = 0
             for idx, tweet_id in enumerate(tweet_ids):
                 if idx % 500 == 0:
-                    print(f'{num_tweets} IDs processed ({num_downloaded/num_tweets:.2f})')
-                    num_tweets = 0
-                    num_downloaded = 0
+                    if num_tweets > 0:
+                        print(f'{num_tweets} IDs processed ({num_downloaded/num_tweets:.2f})')
+                        num_tweets = 0
+                        num_downloaded = 0
                 try:
                     tweet = api.get_status(tweet_id, tweet_mode='extended')
                     tweet_json = json.dumps(tweet)
