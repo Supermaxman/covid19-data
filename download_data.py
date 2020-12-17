@@ -36,7 +36,7 @@ def acquire_from_twitter_api(tweet_ids, output_file, error_file, args):
         wait_on_rate_limit=True
     )
 
-    if not os.path.exists(output_file):
+    if os.path.exists(output_file):
         raise Exception('Output file already exists!')
 
     with open(output_file, 'w') as fo:
