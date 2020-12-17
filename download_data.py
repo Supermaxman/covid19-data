@@ -57,7 +57,7 @@ def acquire_from_twitter_api(tweet_ids, output_file, error_file, args):
                 except tweepy.TweepError as e:
                     tweet_error = json.dumps({
                         'id': tweet_id,
-                        'error': e
+                        'error': str(e)
                     })
                     fe.write(f'{tweet_error}\n')
                 num_tweets += 1
