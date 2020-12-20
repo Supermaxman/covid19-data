@@ -158,11 +158,11 @@ class QABert(pl.LightningModule):
 		predictions = self._get_predictions(logits, threshold)
 		for i in range(num_labels):
 			# label is positive and predicted positive
-			i_tp = (predictions.eq(i).int() * labels.eq(i).int()).sum(dim=-1)
+			i_tp = (predictions.eq(i).float() * labels.eq(i).float()).sum()
 			# label is not positive and predicted positive
-			i_fp = (predictions.eq(i).int() * labels.ne(i).int()).sum(dim=-1)
+			i_fp = (predictions.eq(i).float() * labels.ne(i).float()).sum()
 			# label is positive and predicted negative
-			i_fn = (predictions.ne(i).int() * labels.eq(i).int()).sum(dim=-1)
+			i_fn = (predictions.ne(i).float() * labels.eq(i).float()).sum()
 			i_precision = i_tp / (i_tp + i_fp)
 			i_recall = i_tp / (i_tp + i_fn)
 			i_f1 = 2.0 * (i_precision * i_recall) / (i_precision + i_recall)
