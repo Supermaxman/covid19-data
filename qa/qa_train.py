@@ -81,8 +81,7 @@ if __name__ == '__main__':
 		val_data
 	)
 
-
-	if calc_seq_len:
+	if args.calc_seq_len:
 		import numpy as np
 		from tqdm import tqdm
 
