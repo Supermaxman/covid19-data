@@ -163,8 +163,9 @@ class QABert(pl.LightningModule):
 			i_fp = (predictions.eq(i).float() * labels.ne(i).float()).sum()
 			# label is positive and predicted negative
 			i_fn = (predictions.ne(i).float() * labels.eq(i).float()).sum()
-			i_precision = i_tp / (i_tp + i_fp)
-			i_recall = i_tp / (i_tp + i_fn)
+			i_precision = i_tp / (torch.clamp(i_tp + i_fp, 1.0))
+			i_recall = i_tp / torch.clamp(i_tp + i_fn, 1.0)
+
 			i_f1 = 2.0 * (i_precision * i_recall) / (i_precision + i_recall)
 			macro_f1 += i_f1
 			macro_p += i_precision
