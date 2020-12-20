@@ -8,8 +8,6 @@ from abc import ABC, abstractmethod
 import torch.distributed as dist
 import os
 
-from metrics_utils import F1Score
-
 
 class QABert(pl.LightningModule):
 	def __init__(
