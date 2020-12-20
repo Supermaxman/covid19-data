@@ -10,6 +10,7 @@ export DATASET=covid-lies
 
 # major hyper-parameters for system
 export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
+#export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 
 
 # qa flags
@@ -46,7 +47,7 @@ if [[ ${TRAIN_QA} = true ]]; then
       --max_seq_len 128 \
       --batch_size 8 \
       --learning_rate 5e-6 \
-      --epochs 10 \
+      --epochs 20 \
       --gpus 3,4,5,6
 fi
 

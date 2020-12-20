@@ -39,6 +39,7 @@ class QABert(pl.LightningModule):
 		self.config = self.bert.config
 		self.criterion = nn.CrossEntropyLoss(reduction='none')
 		self.metric = F1Score(average='micro')
+		self.overall_metric = F1Score(average='macro')
 		self.save_hyperparameters()
 
 	def forward(self, input_ids, attention_mask, token_type_ids):
@@ -139,7 +140,7 @@ class QABert(pl.LightningModule):
 			predictions = torch.cat([x[f'{name}_batch_predictions'] for x in outputs], dim=0)
 			labels = torch.cat([x[f'{name}_batch_labels'] for x in outputs], dim=0)
 
-			micro_f1 = self.metric(
+			macro_f1 = self.overall_metric(
 				predictions=predictions,
 				labels=labels
 			)
@@ -157,7 +158,7 @@ class QABert(pl.LightningModule):
 			self.log(f'{name}_loss', loss)
 			self.log(f'{name}_accuracy', accuracy)
 
-			self.log(f'{name}_micro_f1', micro_f1)
+			self.log(f'{name}_macro_f1', macro_f1)
 
 	def validation_epoch_end(self, outputs):
 		self._eval_epoch_end(outputs, 'val')
