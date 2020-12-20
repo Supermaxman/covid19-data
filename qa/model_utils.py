@@ -38,7 +38,6 @@ class QABert(pl.LightningModule):
 		)
 		self.config = self.bert.config
 		self.criterion = nn.CrossEntropyLoss(reduction='none')
-		self.metric = F1Score(average='micro')
 		self.score_func = torch.nn.Softmax(dim=-1)
 		self.save_hyperparameters()
 
@@ -135,8 +134,10 @@ class QABert(pl.LightningModule):
 
 	def _get_predictions(self, logits, threshold):
 		# non-zero class probs
+		# [bsize, num_labels-1]
 		pos_probs = self.score_func(logits)[:, 1:]
 		# filter out non-thresholded classes
+		# [bsize, num_labels-1]
 		pos_probs = pos_probs * ((pos_probs > threshold).float())
 		# 1 if any are above threshold, 0 if none are above threshold
 		# [bsize]
@@ -144,6 +145,7 @@ class QABert(pl.LightningModule):
 		# if none are above threshold then our prediction will be class 0, otherwise it will be
 		# between the classes which have probs above the threshold
 		# [bsize]
+		# we add one to the class id to account for the [:, 1:] filtering of only positive probs
 		pos_predictions = (pos_probs.max(dim=1)[1] + 1)
 		# [bsize]
 		predictions = pos_predictions * pos_any_above
@@ -153,20 +155,32 @@ class QABert(pl.LightningModule):
 		metrics = {}
 		num_labels = logits.shape[-1]
 		macro_f1 = 0.0
+		macro_p = 0.0
+		macro_r = 0.0
 		predictions = self._get_predictions(logits, threshold)
 		for i in range(num_labels):
-			# 0 or 1
-			i_labels = (labels == i).int()
-			# 0 or 1
-			i_predictions = (predictions == i).int()
-			i_f1 = self.metric(
-				predictions=i_predictions,
-				labels=i_labels
-			)
+			# label is positive and predicted positive
+			i_tp = (predictions.eq(i).int() * labels.eq(i).int()).sum(dim=-1)
+			# label is not positive and predicted positive
+			i_fp = (predictions.eq(i).int() * labels.ne(i).int()).sum(dim=-1)
+			# label is positive and predicted negative
+			i_fn = (predictions.ne(i).int() * labels.eq(i).int()).sum(dim=-1)
+			i_precision = i_tp / (i_tp + i_fp)
+			i_recall = i_tp / (i_tp + i_fn)
+			i_f1 = 2.0 * (i_precision * i_recall) / (i_precision + i_recall)
 			macro_f1 += i_f1
+			macro_p += i_precision
+			macro_r += i_recall
 			metrics[f'{name}_{i}_f1'] = i_f1
+			metrics[f'{name}_{i}_p'] = i_precision
+			metrics[f'{name}_{i}_r'] = i_recall
+
 		macro_f1 = macro_f1 / num_labels
+		macro_p = macro_p / num_labels
+		macro_r = macro_r / num_labels
 		metrics[f'{name}_macro_f1'] = macro_f1
+		metrics[f'{name}_macro_p'] = macro_p
+		metrics[f'{name}_macro_r'] = macro_r
 		metrics[f'{name}_threshold'] = threshold
 		return metrics
 
