@@ -3,3 +3,4 @@ data/*
 private/*
 results/*
 saved_models/*
+artifacts/*
