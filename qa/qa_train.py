@@ -108,8 +108,8 @@ if __name__ == '__main__':
 		logging.info(f'95-percentile: {p}')
 		exit()
 
-
-	print(f'train={len(train_dataset)}, val={len(val_dataset)}')
+	logging.info(f'train={len(train_dataset)}, val={len(val_dataset)}')
+	logging.info(f'train_labels={train_dataset.num_labels}')
 
 	train_data_loader = DataLoader(
 		train_dataset,

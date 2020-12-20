@@ -2,15 +2,15 @@
 
 export QA_SPLIT=1
 # run names
-export QA_RUN_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_2
-export QA_RUN_MODEL_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_2
+export QA_RUN_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_3
+export QA_RUN_MODEL_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_3
 
 # collection
 export DATASET=covid-lies
 
 # major hyper-parameters for system
-export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-#export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
+#export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
+export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 
 
 # qa flags
@@ -45,10 +45,10 @@ if [[ ${TRAIN_QA} = true ]]; then
       --pre_model_name ${QA_PRE_MODEL_NAME} \
       --model_name ${QA_MODEL_NAME} \
       --max_seq_len 128 \
-      --batch_size 4 \
+      --batch_size 16 \
       --learning_rate 1e-5 \
       --epochs 20 \
-      --gpus 3,4,5,6
+      --gpus 0
 fi
 
 #if [[ ${RUN_QA} = true ]]; then
