@@ -5,6 +5,7 @@
       <w>jsonl</w>
       <w>kfold</w>
       <w>logits</w>
+      <w>probs</w>
     </words>
   </dictionary>
 </component>

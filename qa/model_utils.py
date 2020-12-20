@@ -39,6 +39,7 @@ class QABert(pl.LightningModule):
 		self.config = self.bert.config
 		self.criterion = nn.CrossEntropyLoss(reduction='none')
 		self.metric = F1Score(average='micro')
+		self.score_func = torch.nn.Softmax(dim=-1)
 		self.save_hyperparameters()
 
 	def forward(self, input_ids, attention_mask, token_type_ids):
@@ -132,30 +133,63 @@ class QABert(pl.LightningModule):
 
 			return result
 
+	def _get_predictions(self, logits, threshold):
+		# non-zero class probs
+		pos_probs = self.score_func(logits)[:, 1:]
+		# filter out non-thresholded classes
+		pos_probs = pos_probs * ((pos_probs > threshold).float())
+		# 1 if any are above threshold, 0 if none are above threshold
+		# [bsize]
+		pos_any_above = ((pos_probs > threshold).int().sum(dim=-1) > 0).int()
+		# if none are above threshold then our prediction will be class 0, otherwise it will be
+		# between the classes which have probs above the threshold
+		# [bsize]
+		pos_predictions = (pos_probs.max(dim=1)[1] + 1)
+		# [bsize]
+		predictions = pos_predictions * pos_any_above
+		return predictions
+
+	def _get_metrics(self, logits, labels, threshold, name):
+		metrics = {}
+		num_labels = logits.shape[-1]
+		macro_f1 = 0.0
+		predictions = self._get_predictions(logits, threshold)
+		for i in range(num_labels):
+			i_f1 = self.metric(
+				predictions=predictions[labels == i],
+				labels=labels[labels == i]
+			)
+			macro_f1 += i_f1
+			metrics[f'{name}_{i}_f1'] = i_f1
+		macro_f1 = macro_f1 / num_labels
+		metrics[f'{name}_macro_f1'] = macro_f1
+		metrics[f'{name}_threshold'] = threshold
+		return metrics
+
 	def _eval_epoch_end(self, outputs, name):
 		if not self.predict_mode:
 			loss = torch.cat([x[f'{name}_batch_loss'] for x in outputs], dim=0).mean()
 			logits = torch.cat([x[f'{name}_batch_logits'] for x in outputs], dim=0)
-			predictions = torch.cat([x[f'{name}_batch_predictions'] for x in outputs], dim=0)
 			labels = torch.cat([x[f'{name}_batch_labels'] for x in outputs], dim=0)
 
-			num_labels = logits.shape[-1]
-			macro_f1 = 0.0
-			for i in range(num_labels):
-				i_f1 = self.metric(
-					predictions=predictions[labels == i],
-					labels=labels[labels == i]
-				)
-				macro_f1 += i_f1
-				self.log(f'{name}_{i}_f1', i_f1)
-			macro_f1 = macro_f1 / num_labels
+			threshold_range = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+			max_metric = float('-inf')
+			max_metrics = {}
+			for threshold in threshold_range:
+				t_metrics = self._get_metrics(logits, labels, threshold, name)
+				m = t_metrics[f'{name}_macro_f1']
+				if m > max_metric:
+					max_metric = m
+					max_metrics = t_metrics
+
+			for metric, value in max_metrics.items():
+				self.log(metric, value)
+
 			correct_count = torch.stack([x[f'{name}_correct_count'] for x in outputs], dim=0).sum()
 			total_count = sum([x[f'{name}_total_count'] for x in outputs])
 			accuracy = correct_count / total_count
 			self.log(f'{name}_loss', loss)
 			self.log(f'{name}_accuracy', accuracy)
-
-			self.log(f'{name}_macro_f1', macro_f1)
 
 	def validation_epoch_end(self, outputs):
 		self._eval_epoch_end(outputs, 'val')
