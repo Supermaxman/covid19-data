@@ -25,6 +25,7 @@ if __name__ == '__main__':
 	parser.add_argument('-eo', '--epochs', default=10, type=int)
 	parser.add_argument('-cd', '--torch_cache_dir', default=None)
 	parser.add_argument('-tpu', '--use_tpus', default=False, action='store_true')
+	parser.add_argument('-csl', '--calc_seq_len', default=False, action='store_true')
 	parser.add_argument('-lr', '--learning_rate', default=5e-6, type=float)
 	parser.add_argument('-gpu', '--gpus', default='0')
 
@@ -38,10 +39,10 @@ if __name__ == '__main__':
 	if not os.path.exists(save_directory):
 		os.mkdir(save_directory)
 
-	is_distributed = False
 	# export TPU_IP_ADDRESS=10.155.6.34
 	# export XRT_TPU_CONFIG="tpu_worker;0;$TPU_IP_ADDRESS:8470"
 	gpus = [int(x) for x in args.gpus.split(',')]
+	is_distributed = len(gpus) > 1
 	precision = 16 if args.use_tpus else 32
 	# precision = 32
 	tpu_cores = 8
@@ -79,6 +80,34 @@ if __name__ == '__main__':
 	val_dataset = QALabeledDataset(
 		val_data
 	)
+
+
+	if calc_seq_len:
+		import numpy as np
+		from tqdm import tqdm
+
+		data_loader = DataLoader(
+			val_dataset,
+			batch_size=1,
+			shuffle=True,
+			num_workers=1,
+			collate_fn=QABatchCollator(
+				tokenizer,
+				args.max_seq_len,
+				False
+			)
+		)
+		logging.info('Calculating seq len stats...')
+		seq_lens = []
+		for idx, batch in tqdm(enumerate(data_loader)):
+			seq_len = batch['input_ids'].shape[-1]
+			seq_lens.append(seq_len)
+			if idx > 1000:
+				break
+		p = np.percentile(seq_lens, 95)
+		logging.info(f'95-percentile: {p}')
+		exit()
+
 
 	print(f'train={len(train_dataset)}, val={len(val_dataset)}')
 
