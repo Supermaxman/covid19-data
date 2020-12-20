@@ -166,7 +166,7 @@ class QABert(pl.LightningModule):
 			i_precision = i_tp / (torch.clamp(i_tp + i_fp, 1.0))
 			i_recall = i_tp / torch.clamp(i_tp + i_fn, 1.0)
 
-			i_f1 = 2.0 * (i_precision * i_recall) / (i_precision + i_recall)
+			i_f1 = 2.0 * (i_precision * i_recall) / (torch.clamp(i_precision + i_recall, 1.0))
 			macro_f1 += i_f1
 			macro_p += i_precision
 			macro_r += i_recall
