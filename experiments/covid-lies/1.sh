@@ -34,7 +34,10 @@ export QA_RUN_PATH=${QA_PATH}/${QA_RUN_NAME}.txt
 export QA_EVAL_PATH=${QA_PATH}/${QA_RUN_NAME}.eval
 
 
+
+
 if [[ ${TRAIN_QA} = true ]]; then
+    # python qa/create_split.py -i ${COLLECTION_PATH} -o ${DATASET_PATH}
     echo "Training qa model..."
     python qa/qa_train.py \
       --split_path ${SPLIT_PATH} \

@@ -26,6 +26,7 @@ if __name__ == '__main__':
 	parser.add_argument('-cd', '--torch_cache_dir', default=None)
 	parser.add_argument('-tpu', '--use_tpus', default=False, action='store_true')
 	parser.add_argument('-lr', '--learning_rate', default=5e-6, type=float)
+	parser.add_argument('-gpu', '--gpus', default='0')
 
 	args = parser.parse_args()
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
 	is_distributed = False
 	# export TPU_IP_ADDRESS=10.155.6.34
 	# export XRT_TPU_CONFIG="tpu_worker;0;$TPU_IP_ADDRESS:8470"
-	gpus = [0]
+	gpus = [int(x) for x in args.gpu.split(',')]
 	precision = 16 if args.use_tpus else 32
 	# precision = 32
 	tpu_cores = 8

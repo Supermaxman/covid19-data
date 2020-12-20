@@ -81,7 +81,7 @@ class QALabeledDataset(Dataset):
 		self.num_docs = len(documents)
 		self.num_labels = defaultdict(int)
 		for doc in documents:
-			for m in doc['misinformation']:
+			for m in doc['misconceptions']:
 				ex = {
 					'id': doc['id_str'],
 					'question_id': m['misconception_id'],
