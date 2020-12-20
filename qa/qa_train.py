@@ -7,10 +7,11 @@ import pytorch_lightning as pl
 from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
-import torch
 
 from model_utils import QABert
 from data_utils import QALabeledDataset, QABatchCollator
+
+import torch
 
 
 if __name__ == '__main__':
