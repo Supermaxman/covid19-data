@@ -105,7 +105,7 @@ class QABert(pl.LightningModule):
 				f'{name}_total_count': total_count,
 				f'{name}_batch_logits': logits,
 				f'{name}_batch_labels': batch['labels'],
-				f'{name}_batch_prediction': prediction,
+				f'{name}_batch_predictions': prediction,
 			}
 
 			return result
