@@ -47,7 +47,7 @@ class QABert(pl.LightningModule):
 			input_ids,
 			attention_mask=attention_mask,
 			token_type_ids=token_type_ids
-		)[0]
+		)
 		contextualized_embeddings = outputs[0]
 		cls_output = contextualized_embeddings[:, 0]
 		cls_output = self.dropout(cls_output)

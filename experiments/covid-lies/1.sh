@@ -43,7 +43,7 @@ if [[ ${TRAIN_QA} = true ]]; then
       --split_path ${SPLIT_PATH} \
       --pre_model_name ${QA_PRE_MODEL_NAME} \
       --model_name ${QA_MODEL_NAME} \
-      --max_seq_len 256 \
+      --max_seq_len 128 \
       --batch_size 4 \
       --learning_rate 5e-6 \
       --epochs 5
