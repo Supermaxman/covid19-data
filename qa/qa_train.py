@@ -41,7 +41,7 @@ if __name__ == '__main__':
 	is_distributed = False
 	# export TPU_IP_ADDRESS=10.155.6.34
 	# export XRT_TPU_CONFIG="tpu_worker;0;$TPU_IP_ADDRESS:8470"
-	gpus = [int(x) for x in args.gpu.split(',')]
+	gpus = [int(x) for x in args.gpus.split(',')]
 	precision = 16 if args.use_tpus else 32
 	# precision = 32
 	tpu_cores = 8
