@@ -42,7 +42,6 @@ class QABert(pl.LightningModule):
 		self.save_hyperparameters()
 
 	def forward(self, input_ids, attention_mask, token_type_ids):
-		# [batch_size, 2]
 		outputs = self.bert(
 			input_ids,
 			attention_mask=attention_mask,
@@ -106,7 +105,7 @@ class QABert(pl.LightningModule):
 				f'{name}_total_count': total_count,
 				f'{name}_batch_logits': logits,
 				f'{name}_batch_labels': batch['labels'],
-				f'{name}_batch_prediction': batch['prediction'],
+				f'{name}_batch_prediction': prediction,
 			}
 
 			return result
