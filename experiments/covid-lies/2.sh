@@ -45,8 +45,8 @@ if [[ ${TRAIN_QA} = true ]]; then
       --pre_model_name ${QA_PRE_MODEL_NAME} \
       --model_name ${QA_MODEL_NAME} \
       --max_seq_len 128 \
-      --batch_size 4 \
-      --learning_rate 1e-5 \
+      --batch_size 8 \
+      --learning_rate 5e-5 \
       --epochs 20 \
       --gpus 3,4,5,6
 fi

@@ -155,9 +155,13 @@ class QABert(pl.LightningModule):
 		macro_f1 = 0.0
 		predictions = self._get_predictions(logits, threshold)
 		for i in range(num_labels):
+			# 0 or 1
+			i_labels = (labels == i).int()
+			# 0 or 1
+			i_predictions = (predictions == i).int()
 			i_f1 = self.metric(
-				predictions=predictions[labels == i],
-				labels=labels[labels == i]
+				predictions=i_predictions,
+				labels=i_labels
 			)
 			macro_f1 += i_f1
 			metrics[f'{name}_{i}_f1'] = i_f1
