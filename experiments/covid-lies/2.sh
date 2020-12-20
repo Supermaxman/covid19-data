@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-export SPLIT=1
+export QA_SPLIT=1
 # run names
-export QA_RUN_NAME=HLTRI_COVID_LIES_QA_SPLIT_${SPLIT}_2
-export QA_RUN_MODEL_NAME=HLTRI_COVID_LIES_QA_SPLIT_${SPLIT}_2
+export QA_RUN_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_2
+export QA_RUN_MODEL_NAME=HLTRI_COVID_LIES_QA_SPLIT_${QA_SPLIT}_2
 
 # collection
 export DATASET=covid-lies
@@ -23,7 +23,7 @@ export EVAL_QA=true
 export QA_MODEL_NAME=qa-${DATASET}-${QA_RUN_MODEL_NAME}
 export DATASET_PATH=data
 export COLLECTION_PATH=${DATASET_PATH}/downloaded_tweets_labeled.jsonl
-export SPLIT_PATH=${DATASET_PATH}/split_${SPLIT}.json
+export SPLIT_PATH=${DATASET_PATH}/split_${QA_SPLIT}.json
 
 export ARTIFACTS_PATH=artifacts/${DATASET}
 
@@ -44,8 +44,8 @@ if [[ ${TRAIN_QA} = true ]]; then
       --pre_model_name ${QA_PRE_MODEL_NAME} \
       --model_name ${QA_MODEL_NAME} \
       --max_seq_len 128 \
-      --batch_size 4 \
-      --learning_rate 5e-5 \
+      --batch_size 8 \
+      --learning_rate 5e-6 \
       --epochs 10 \
       --gpus 3,4,5,6
 fi
