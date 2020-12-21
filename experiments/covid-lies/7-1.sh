@@ -11,7 +11,7 @@ QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 QA_THRESHOLD=0.1
 
-GPUS=6
+GPUS=7
 NUM_QA_SPLITS=5
 # qa flags
 # QA fine-tune qaing model using training set
