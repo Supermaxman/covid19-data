@@ -72,7 +72,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     QA_SPLIT_FILES="${QA_SPLIT_FILES},${QA_SPLIT_FILE_PATH}"
 done
 
-python qa/format_eval \
+python qa/format_eval.py \
   --input_path ${QA_SPLIT_FILES} \
   --output_path ${QA_RUN_FILE_PATH} \
   --threshold ${QA_THRESHOLD}
