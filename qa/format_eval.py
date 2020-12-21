@@ -35,9 +35,10 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	scores = {}
 	for input_path in args.input_path.split(','):
-		with open(input_path) as f:
-			# [twitter_id] -> [m_id, m_scores...]
-			scores.update(json.load(f))
+		if input_path:
+			with open(input_path) as f:
+				# [twitter_id] -> [m_id, m_scores...]
+				scores.update(json.load(f))
 
 	score_func = torch.nn.Softmax(dim=-1)
 	predictions = defaultdict(list)
