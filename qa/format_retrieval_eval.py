@@ -31,8 +31,8 @@ if __name__ == '__main__':
 			m_score_list[m_id].append(score)
 
 		# multiple models will make a prediction, take average score
-		for m_id, m_scores in m_score_list.items():
-			m_score = np.mean(m_scores)
+		for m_id, m_s_list in m_score_list.items():
+			m_score = np.mean(m_s_list)
 			predictions[tweet_id].append((m_id, m_score))
 
 		predictions[tweet_id] = list(sorted(predictions[tweet_id], key=lambda x: x[1], reverse=True))
