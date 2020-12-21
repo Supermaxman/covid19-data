@@ -62,7 +62,7 @@ if __name__ == '__main__':
 	class_run = filter_by_label(predictions)
 	result_titles = []
 	result_values = []
-	for i in range(num_labels):
+	for i in [1, 2, 0]:
 		i_precision, i_recall, i_f1 = calculate_metrics(
 			class_labels[i],
 			class_run[i]
