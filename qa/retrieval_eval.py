@@ -7,8 +7,7 @@ from collections import defaultdict
 
 def calculate_mrr(labels, scores):
 	mrr = 0.0
-	all_tweets = sorted(list(set(labels.keys()).union(set(scores.keys()))))
-	for tweet_id in all_tweets:
+	for tweet_id in labels:
 		t_mrr = 0.0
 		t_labels = labels[tweet_id]
 		t_scores = scores[tweet_id]
@@ -18,14 +17,13 @@ def calculate_mrr(labels, scores):
 				t_mrr += r_rank
 		t_mrr = t_mrr / len(t_labels)
 		mrr += t_mrr
-	mrr = mrr / len(all_tweets)
+	mrr = mrr / len(labels)
 	return mrr
 
 
 def calculate_hits(labels, scores, h):
 	hits = 0.0
-	all_tweets = sorted(list(set(labels.keys()).union(set(scores.keys()))))
-	for tweet_id in all_tweets:
+	for tweet_id in labels:
 		t_hits = 0.0
 		t_labels = labels[tweet_id]
 		t_scores = scores[tweet_id]
@@ -34,7 +32,7 @@ def calculate_hits(labels, scores, h):
 				t_hits += 1.0
 		t_hits = t_hits / h
 		hits += t_hits
-	hits = hits / len(all_tweets)
+	hits = hits / len(labels)
 	return hits
 
 

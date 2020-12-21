@@ -4,7 +4,6 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from torch import nn
 import torch
 import pytorch_lightning as pl
-from abc import ABC, abstractmethod
 import torch.distributed as dist
 import os
 
