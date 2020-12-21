@@ -5,6 +5,8 @@
       <w>jsonl</w>
       <w>kfold</w>
       <w>logits</w>
+      <w>pred</w>
+      <w>preds</w>
       <w>probs</w>
     </words>
   </dictionary>

@@ -15,7 +15,7 @@ export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 
 # qa flags
 # QA fine-tune qaing model using training set
-export TRAIN_QA=true
+export TRAIN_QA=false
 # QA run qa using trained model on validation set
 export RUN_QA=true
 # QA run evaluation script on validation set

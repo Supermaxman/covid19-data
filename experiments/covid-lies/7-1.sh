@@ -11,11 +11,11 @@ export DATASET=covid-lies
 # major hyper-parameters for system
 export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
-
+export QA_THRESHOLD=0.1
 
 # qa flags
 # QA fine-tune qaing model using training set
-export TRAIN_QA=true
+export TRAIN_QA=false
 # QA run qa using trained model on validation set
 export RUN_QA=true
 # QA run evaluation script on validation set
@@ -51,31 +51,28 @@ if [[ ${TRAIN_QA} = true ]]; then
       --gpus 6
 fi
 
-#if [[ ${RUN_QA} = true ]]; then
-#    echo "Running qa model..."
-#    python qa/qa_run.py \
-#      --collection_path ${COLLECTION_PATH} \
-#      --label_path ${LABEL_PATH} \
-#      --output_path ${QA_PATH} \
-#      --pre_model_name ${QA_PRE_MODEL_NAME} \
-#      --model_name ${QA_MODEL_NAME} \
-#      --max_seq_len 96 \
-#      --load_trained_model \
-#    ; \
-#    python qa/format_qa.py \
-#      --input_path ${QA_PATH} \
-#      --output_path ${QA_FILE_PATH} \
-#    ; \
-#    python qa/format_eval \
-#      --input_path ${QA_FILE_PATH} \
-#      --output_path ${QA_RUN_PATH} \
-#      --top_k 1000
-#
-#    python -m qa.extract_answers \
-#      --search_path ${QA_RUN_PATH} \
-#      --collection_path ${COLLECTION_PATH} \
-#      --output_path ${ANSWERS_PATH}
-#fi
+if [[ ${RUN_QA} = true ]]; then
+    echo "Running qa model..."
+    python qa/qa_run.py \
+      --split_path ${SPLIT_PATH} \
+      --pre_model_name ${QA_PRE_MODEL_NAME} \
+      --model_name ${QA_MODEL_NAME} \
+      --output_path ${QA_FILE_PATH} \
+      --max_seq_len 128 \
+      --batch_size 8 \
+      --learning_rate 5e-5 \
+      --epochs 20 \
+      --load_trained_model \
+    ; \
+    python qa/format_qa.py \
+      --input_path ${QA_PATH} \
+      --output_path ${QA_FILE_PATH} \
+    ; \
+    python qa/format_eval \
+      --input_path ${QA_FILE_PATH} \
+      --output_path ${QA_RUN_PATH} \
+      --threshold ${QA_THRESHOLD}
+fi
 
 
 #if [[ ${EVAL_QA} = true ]]; then

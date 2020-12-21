@@ -144,7 +144,7 @@ class QABert(pl.LightningModule):
 		# between the classes which have probs above the threshold
 		# [bsize]
 		# we add one to the class id to account for the [:, 1:] filtering of only positive probs
-		pos_predictions = (pos_probs.max(dim=1)[1] + 1)
+		pos_predictions = (pos_probs.max(dim=-1)[1] + 1)
 		# [bsize]
 		predictions = pos_predictions * pos_any_above
 		return predictions
