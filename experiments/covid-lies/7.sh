@@ -24,7 +24,7 @@ RUN_QA=false
 
 RUN_RETRIEVAL=false
 # QA run evaluation script on validation set
-EVAL_QA=false
+EVAL_QA=true
 
 EVAL_RETRIEVAL=true
 
