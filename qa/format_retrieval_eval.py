@@ -27,8 +27,8 @@ if __name__ == '__main__':
 			disagree_score = m_score['2_score']
 			m_id = m_score['question_id']
 			# TODO come up with better ranking
-			# score = -irrelevant_score
-			score = agree_score
+			score = -irrelevant_score
+			# score = agree_score
 			m_score_list[m_id].append(score)
 
 		# multiple models will make a prediction, take average score
