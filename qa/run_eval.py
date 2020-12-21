@@ -60,9 +60,11 @@ if __name__ == '__main__':
 	macro_f1 = 0.0
 	macro_p = 0.0
 	macro_r = 0.0
+	class_labels = filter_by_label(labels)
+	class_run = filter_by_label(predictions)
 	for i in range(num_labels):
-		i_labels = filter_by_label(labels)
-		i_run = filter_by_label(predictions)
+		i_labels = class_labels[i]
+		i_run = class_run[i]
 		i_precision, i_recall, i_f1 = calculate_metrics(i_labels, i_run)
 
 		macro_f1 += i_f1
