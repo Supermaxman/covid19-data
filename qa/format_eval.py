@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	for tweet_id, m_scores in scores.items():
 		for m_score in m_scores:
 			logits = torch.tensor([m_score['0_score'], m_score['1_score'], m_score['2_score']], dtype=torch.float)
-			preds = get_predictions(logits, args.threshold, score_func)
+			preds = get_predictions(logits, args.threshold, score_func).tolist()
 			predictions[tweet_id].append((m_score['question_id'], preds))
 
 	with open(args.output_path, 'w') as f:
