@@ -6,19 +6,22 @@ from collections import defaultdict
 
 
 def calculate_metrics(labels, predictions):
+	tp = 0
+	fn = 0
+	fp = 0
 	for tweet_id, t_labels in labels.items():
 		t_run = predictions[tweet_id]
 
-		tp = len(t_labels.intersection(t_run))
+		tp += len(t_labels.intersection(t_run))
 
-		fn = len(t_labels.difference(t_run))
+		fn += len(t_labels.difference(t_run))
 
-		fp = len(t_run.difference(t_labels))
+		fp += len(t_run.difference(t_labels))
 
-		p = tp / (max(tp + fp, 1))
-		r = tp / (max(tp + fn, 1))
-		f1 = 2.0 * (p * r) / (max(p + r, 1))
-		return p, r, f1
+	p = tp / (max(tp + fp, 1))
+	r = tp / (max(tp + fn, 1))
+	f1 = 2.0 * (p * r) / (max(p + r, 1))
+	return p, r, f1
 
 
 def filter_by_label(data):
