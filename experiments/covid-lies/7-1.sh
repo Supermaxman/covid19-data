@@ -17,7 +17,7 @@ NUM_QA_SPLITS=5
 # QA fine-tune qaing model using training set
 TRAIN_QA=false
 # QA run qa using trained model on validation set
-RUN_QA=true
+RUN_QA=false
 # QA run evaluation script on validation set
 EVAL_QA=true
 
@@ -68,8 +68,8 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
         python qa/format_qa.py \
           --input_path ${QA_SPLIT_PATH} \
           --output_path ${QA_SPLIT_FILE_PATH}
-        QA_SPLIT_FILES="${QA_SPLIT_FILES},${QA_SPLIT_FILE_PATH}"
     fi
+    QA_SPLIT_FILES="${QA_SPLIT_FILES},${QA_SPLIT_FILE_PATH}"
 done
 
 python qa/format_eval \
