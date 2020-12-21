@@ -30,6 +30,7 @@ def calculate_hits(labels, scores, h):
 		for m_id, m_score in t_scores[:h]:
 			if m_id in t_labels:
 				t_hits += 1.0
+		# TODO what if len(t_labels) > h?
 		t_hits = t_hits / len(t_labels)
 		hits += t_hits
 	hits = hits / len(labels)

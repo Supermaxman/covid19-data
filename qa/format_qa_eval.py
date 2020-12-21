@@ -33,12 +33,14 @@ if __name__ == '__main__':
 	parser.add_argument('-o', '--output_path', required=True)
 	parser.add_argument('-t', '--threshold', type=float, required=True)
 	args = parser.parse_args()
-	scores = {}
+	scores = defaultdict(list)
 	for input_path in args.input_path.split(','):
 		if input_path:
 			with open(input_path) as f:
 				# [twitter_id] -> [m_id, m_scores...]
-				scores.update(json.load(f))
+				f_scores = json.load(f)
+				for tweet_id, t_scores in f_scores.items():
+					scores[tweet_id].extend(t_scores)
 
 	score_func = torch.nn.Softmax(dim=-1)
 	predictions = defaultdict(list)
