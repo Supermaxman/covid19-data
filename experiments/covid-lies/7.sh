@@ -28,6 +28,7 @@ ARTIFACTS_PATH=artifacts/${DATASET}
 QA_RUN_NAME=HLTRI_COVID_LIES_QA_${RUN_ID}
 QA_RUN_PATH=${ARTIFACTS_PATH}/${QA_RUN_NAME}
 QA_RUN_FILE_PATH=${QA_RUN_PATH}/${QA_RUN_NAME}.run
+QA_EVAL_FILE_PATH=${QA_RUN_PATH}/${QA_RUN_NAME}.eval
 QA_SPLIT_FILES=""
 # python qa/create_split.py -i ${COLLECTION_PATH} -o ${DATASET_PATH}
 
@@ -72,23 +73,18 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     QA_SPLIT_FILES="${QA_SPLIT_FILES},${QA_SPLIT_FILE_PATH}"
 done
 
-mkdir -p ${QA_RUN_PATH}
-python qa/format_eval.py \
-  --input_path ${QA_SPLIT_FILES} \
-  --output_path ${QA_RUN_FILE_PATH} \
-  --threshold ${QA_THRESHOLD}
+if [[ ${EVAL_QA} = true ]]; then
+    echo "Evaluating qa model..."
+    mkdir -p ${QA_RUN_PATH}
+    python qa/format_eval.py \
+      --input_path ${QA_SPLIT_FILES} \
+      --output_path ${QA_RUN_FILE_PATH} \
+      --threshold ${QA_THRESHOLD}
 
-#if [[ ${EVAL_QA} = true ]]; then
-#    echo "Evaluating qa model..."
-#    python qa/eval.py \
-#      ${COLLECTION_PATH} \
-#      ${QA_RUN_PATH} \
-#      --task ${DATASET} \
-#      > ${QA_EVAL_PATH} \
-#      ; \
-#      tail -n 3 ${QA_EVAL_PATH} \
-#      | awk \
-#        '{ for (i=1; i<=NF; i++) RtoC[i]= (RtoC[i]? RtoC[i] FS $i: $i) }
-#        END{ for (i in RtoC) print RtoC[i] }' \
-#      | tail -n 2
-#fi
+    python qa/run_eval.py \
+      --label_path ${COLLECTION_PATH} \
+      --run_path ${QA_RUN_FILE_PATH} \
+      > ${QA_EVAL_FILE_PATH} \
+      ; \
+      cat ${QA_EVAL_FILE_PATH}
+fi
