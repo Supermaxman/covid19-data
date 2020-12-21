@@ -13,6 +13,7 @@ export QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 export QA_THRESHOLD=0.1
 
+export GPUS=6
 # qa flags
 # QA fine-tune qaing model using training set
 export TRAIN_QA=false
@@ -48,7 +49,7 @@ if [[ ${TRAIN_QA} = true ]]; then
       --batch_size 8 \
       --learning_rate 5e-5 \
       --epochs 20 \
-      --gpus 6
+      --gpus ${GPUS}
 fi
 
 if [[ ${RUN_QA} = true ]]; then
@@ -63,6 +64,7 @@ if [[ ${RUN_QA} = true ]]; then
       --learning_rate 5e-5 \
       --epochs 20 \
       --load_trained_model \
+      --gpus ${GPUS} \
     ; \
     python qa/format_qa.py \
       --input_path ${QA_PATH} \
