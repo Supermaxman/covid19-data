@@ -1,7 +1,7 @@
 
 import json
 import argparse
-from data_utils import label_text_to_id
+from data_utils import label_text_to_id, read_jsonl
 from collections import defaultdict
 
 
@@ -42,13 +42,13 @@ if __name__ == '__main__':
 	parser.add_argument('-l', '--label_path', required=True)
 	parser.add_argument('-r', '--run_path', required=True)
 	args = parser.parse_args()
-	with open(args.label_path) as f:
-		labels = json.load(f)
-		labels = {t['id_str']: t['misconceptions'] for t in labels}
-		# [tweet_id] -> set((m_id, m_label))
-		labels = {
-			k: set([(m['misconception_id'], label_text_to_id(m['label'])) for m in v]) for k, v in labels.items()
-		}
+
+	labels = read_jsonl(args.label_path)
+	labels = {t['id_str']: t['misconceptions'] for t in labels}
+	# [tweet_id] -> set((m_id, m_label))
+	labels = {
+		k: set([(m['misconception_id'], label_text_to_id(m['label'])) for m in v]) for k, v in labels.items()
+	}
 
 	with open(args.run_path) as f:
 		predictions = json.load(f)
