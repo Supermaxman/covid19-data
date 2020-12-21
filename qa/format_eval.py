@@ -46,7 +46,7 @@ if __name__ == '__main__':
 		for m_score in m_scores:
 			logits = torch.tensor([m_score['0_score'], m_score['1_score'], m_score['2_score']], dtype=torch.float)
 			preds = get_predictions(logits, args.threshold, score_func)
-			predictions[tweet_id].append((m_score['misconception_id'], preds))
+			predictions[tweet_id].append((m_score['question_id'], preds))
 
 	with open(args.output_path, 'w') as f:
 		json.dump(predictions, f, indent=2)
