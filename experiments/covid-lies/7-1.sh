@@ -58,7 +58,7 @@ if [[ ${RUN_QA} = true ]]; then
       --split_path ${SPLIT_PATH} \
       --pre_model_name ${QA_PRE_MODEL_NAME} \
       --model_name ${QA_MODEL_NAME} \
-      --output_path ${QA_FILE_PATH} \
+      --output_path ${QA_PATH} \
       --max_seq_len 128 \
       --batch_size 8 \
       --learning_rate 5e-5 \

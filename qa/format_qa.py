@@ -15,6 +15,7 @@ def load_predictions(input_path):
 	scores = defaultdict(list)
 
 	for prediction in pred_list:
+		print(prediction)
 		tweet_id = prediction['id']
 		question_id = prediction['question_id']
 		scores[tweet_id].append(

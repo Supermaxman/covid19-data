@@ -82,7 +82,7 @@ if __name__ == '__main__':
 		eval_data
 	)
 
-	logging.info(f'eval={len(eval_dataset)}, val={len(eval_dataset)}')
+	logging.info(f'eval={len(eval_dataset)}')
 
 	eval_data_loader = DataLoader(
 		eval_dataset,
