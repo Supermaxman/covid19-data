@@ -1,5 +1,5 @@
 
-from transformers import BertModel
+from transformers import BertModel, BertConfig
 from transformers import AdamW, get_linear_schedule_with_warmup
 from torch import nn
 import torch
@@ -22,19 +22,28 @@ class QABert(pl.LightningModule):
 		self.updates_total = updates_total
 		self.predict_mode = predict_mode
 		self.predict_path = predict_path
+		if not self.predict_mode:
+			self.bert = BertModel.from_pretrained(
+				pre_model_name,
+				cache_dir=torch_cache_dir
+			)
+			self.config = self.bert.config
+		else:
+			# no need to load pre-trained weights since we will be loading whole model's
+			# fine-tuned weights from checkpoint.
+			self.config = BertConfig.from_pretrained(
+				pre_model_name,
+				cache_dir=torch_cache_dir
+			)
+			self.bert = BertModel(self.config)
 
-		self.bert = BertModel.from_pretrained(
-			pre_model_name,
-			cache_dir=torch_cache_dir
-		)
 		self.classifier = nn.Linear(
-			self.bert.config.hidden_size,
+			self.config.hidden_size,
 			3
 		)
 		self.dropout = nn.Dropout(
-			p=self.bert.config.hidden_dropout_prob
+			p=self.config.hidden_dropout_prob
 		)
-		self.config = self.bert.config
 		self.criterion = nn.CrossEntropyLoss(reduction='none')
 		self.score_func = torch.nn.Softmax(dim=-1)
 		self.save_hyperparameters()

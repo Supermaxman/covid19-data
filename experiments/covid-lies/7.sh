@@ -22,7 +22,7 @@ TRAIN_QA=false
 # QA run qa using trained model on validation set
 RUN_QA=false
 
-RUN_RETRIEVAL=true
+RUN_RETRIEVAL=false
 # QA run evaluation script on validation set
 EVAL_QA=false
 
@@ -128,7 +128,7 @@ if [[ ${EVAL_QA} = true ]]; then
 fi
 
 
-if [[ ${EVAL_QA} = true ]]; then
+if [[ ${EVAL_RETRIEVAL} = true ]]; then
     echo "Evaluating qa model..."
     mkdir -p ${RETRIEVAL_RUN_PATH}
     python qa/format_retrieval_eval.py \
