@@ -110,13 +110,12 @@ class QABert(pl.LightningModule):
 		else:
 			logits = self._forward_step(batch, batch_nb)
 			logits = logits.detach()
-			num_labels = logits.shape[-1]
 			device_id = get_device_id()
 			ex_dict = {
 				'id': batch['id'],
 				'question_id': batch['question_id'],
 			}
-			for i in range(num_labels):
+			for i in range(3):
 				ex_dict[f'{i}_score']: logits[:, i].tolist()
 			self.write_prediction_dict(
 				ex_dict,
