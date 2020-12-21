@@ -1,7 +1,7 @@
 
 import json
 import argparse
-from data_utils import read_jsonl
+from data_utils import read_jsonl, label_text_to_id
 from collections import defaultdict
 
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 	for tweet_id, misconceptions in labels.items():
 		for m in misconceptions:
 			m_id = m['misconception_id']
-			m_label = m['label']
+			m_label = label_text_to_id(m['label'])
 			modified_labels[tweet_id][m_label].add(m_id)
 	labels = modified_labels
 
