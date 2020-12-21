@@ -115,8 +115,8 @@ class QABert(pl.LightningModule):
 				'id': batch['id'],
 				'question_id': batch['question_id'],
 			}
-			for i in range(3):
-				ex_dict[f'{i}_score']: logits[:, i].tolist()
+			for i in range(logits.shape[-1]):
+				ex_dict[f'{i}_score'] = logits[:, i].tolist()
 			self.write_prediction_dict(
 				ex_dict,
 				filename=os.path.join(self.predict_path, f'predictions-{device_id}.pt')
