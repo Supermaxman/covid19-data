@@ -18,8 +18,12 @@ NUM_QA_SPLITS=5
 TRAIN_QA=false
 # QA run qa using trained model on validation set
 RUN_QA=false
+
+RUN_RETRIEVAL=true
 # QA run evaluation script on validation set
-EVAL_QA=true
+EVAL_QA=false
+
+EVAL_RETRIEVAL=true
 
 DATASET_PATH=data
 COLLECTION_PATH=${DATASET_PATH}/downloaded_tweets_labeled.jsonl
@@ -30,6 +34,13 @@ QA_RUN_PATH=${ARTIFACTS_PATH}/${QA_RUN_NAME}
 QA_RUN_FILE_PATH=${QA_RUN_PATH}/${QA_RUN_NAME}.run
 QA_EVAL_FILE_PATH=${QA_RUN_PATH}/${QA_RUN_NAME}.eval
 QA_SPLIT_FILES=""
+
+
+RETRIEVAL_RUN_NAME=HLTRI_COVID_LIES_RETRIEVAL_${RUN_ID}
+RETRIEVAL_RUN_PATH=${ARTIFACTS_PATH}/${RETRIEVAL_RUN_NAME}
+RETRIEVAL_RUN_FILE_PATH=${RETRIEVAL_RUN_PATH}/${RETRIEVAL_RUN_NAME}.run
+RETRIEVAL_EVAL_FILE_PATH=${RETRIEVAL_RUN_PATH}/${RETRIEVAL_RUN_NAME}.eval
+RETRIEVAL_SPLIT_FILES=""
 # python qa/create_split.py -i ${COLLECTION_PATH} -o ${DATASET_PATH}
 
 for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
@@ -38,6 +49,8 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     QA_SPLIT_MODEL_NAME=qa-${DATASET}-${QA_SPLIT_RUN_MODEL_NAME}
     QA_SPLIT_PATH=${ARTIFACTS_PATH}/${QA_SPLIT_RUN_NAME}
     QA_SPLIT_FILE_PATH=${QA_SPLIT_PATH}/${QA_SPLIT_RUN_NAME}.qa
+    RETRIEVAL_SPLIT_PATH=${ARTIFACTS_PATH}/${QA_SPLIT_RUN_NAME}
+    RETRIEVAL_SPLIT_FILE_PATH=${RETRIEVAL_SPLIT_PATH}/${QA_SPLIT_RUN_NAME}.re
 
     if [[ ${TRAIN_QA} = true ]]; then
         echo "Training split ${SPLIT} qa model..."
@@ -53,8 +66,8 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     fi
 
     if [[ ${RUN_QA} = true ]]; then
-        echo "Running split ${SPLIT} qa model..."
-        python qa/qa_run.py \
+        echo "Running split ${SPLIT} qa..."
+        python qa/qa_predict.py \
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
           --model_name ${QA_SPLIT_MODEL_NAME} \
@@ -66,25 +79,63 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --load_trained_model \
           --gpus ${GPUS} \
         ; \
-        python qa/format_qa.py \
+        python qa/format_qa_predictions.py \
           --input_path ${QA_SPLIT_PATH} \
           --output_path ${QA_SPLIT_FILE_PATH}
     fi
+    if [[ ${RUN_RETRIEVAL} = true ]]; then
+        echo "Running split ${SPLIT} retrieval..."
+        python qa/qa_predict.py \
+          --split_path ${DATASET_PATH}/split_${SPLIT}.json \
+          --pre_model_name ${QA_PRE_MODEL_NAME} \
+          --model_name ${QA_SPLIT_MODEL_NAME} \
+          --output_path ${RETRIEVAL_SPLIT_PATH} \
+          --max_seq_len 128 \
+          --batch_size 8 \
+          --learning_rate 5e-5 \
+          --epochs 20 \
+          --load_trained_model \
+          --gpus ${GPUS} \
+          --mode retrieval \
+          --misconceptions_path ${DATASET_PATH}/misconceptions.json  \
+        ; \
+        python qa/format_qa_predictions.py \
+          --input_path ${RETRIEVAL_SPLIT_PATH} \
+          --output_path ${RETRIEVAL_SPLIT_FILE_PATH}
+    fi
+
     QA_SPLIT_FILES="${QA_SPLIT_FILES},${QA_SPLIT_FILE_PATH}"
+    RETRIEVAL_SPLIT_FILES="${RETRIEVAL_SPLIT_FILES},${RETRIEVAL_SPLIT_FILE_PATH}"
 done
 
 if [[ ${EVAL_QA} = true ]]; then
     echo "Evaluating qa model..."
     mkdir -p ${QA_RUN_PATH}
-    python qa/format_eval.py \
+    python qa/format_qa_eval.py \
       --input_path ${QA_SPLIT_FILES} \
       --output_path ${QA_RUN_FILE_PATH} \
       --threshold ${QA_THRESHOLD}
 
-    python qa/run_eval.py \
+    python qa/qa_eval.py \
       --label_path ${COLLECTION_PATH} \
       --run_path ${QA_RUN_FILE_PATH} \
       > ${QA_EVAL_FILE_PATH} \
       ; \
       cat ${QA_EVAL_FILE_PATH}
+fi
+
+
+if [[ ${EVAL_QA} = true ]]; then
+    echo "Evaluating qa model..."
+    mkdir -p ${RETRIEVAL_RUN_PATH}
+    python qa/format_retrieval_eval.py \
+      --input_path ${RETRIEVAL_SPLIT_FILES} \
+      --output_path ${RETRIEVAL_RUN_FILE_PATH}
+
+    python qa/retrieval_eval.py \
+      --label_path ${COLLECTION_PATH} \
+      --run_path ${RETRIEVAL_RUN_FILE_PATH} \
+      > ${RETRIEVAL_EVAL_FILE_PATH} \
+      ; \
+      cat ${RETRIEVAL_EVAL_FILE_PATH}
 fi

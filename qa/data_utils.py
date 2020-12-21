@@ -135,6 +135,34 @@ class QAPredictionDataset(Dataset):
 		return example
 
 
+class QARetrievalPredictionDataset(Dataset):
+	def __init__(self, documents, misconceptions):
+		self.examples = []
+		self.num_docs = len(documents)
+		for doc in documents:
+			for m_id, m in misconceptions.items():
+				ex = {
+					'id': doc['id_str'],
+					'text': doc['full_text'],
+					'question_id': m_id,
+					'query': m['misconception_question'],
+				}
+				self.examples.append(ex)
+
+		self.num_examples = len(self.examples)
+
+	def __len__(self):
+		return len(self.examples)
+
+	def __getitem__(self, idx):
+		if torch.is_tensor(idx):
+			idx = idx.tolist()
+
+		example = self.examples[idx]
+
+		return example
+
+
 class QAPredictionCollator(object):
 	def __init__(self, tokenizer,  max_seq_len: int, force_max_seq_len: bool):
 		super().__init__()

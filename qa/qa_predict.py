@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
 from model_utils import QABert
-from data_utils import QAPredictionDataset, QAPredictionCollator
+from data_utils import QAPredictionDataset, QAPredictionCollator, QARetrievalPredictionDataset
 
 import torch
 
@@ -31,6 +31,8 @@ if __name__ == '__main__':
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-lt', '--load_trained_model', default=False, action='store_true')
 	parser.add_argument('-o', '--output_path', required=True)
+	parser.add_argument('-m', '--mode', default='qa')
+	parser.add_argument('-mp', '--misconceptions_path', default='data/misconceptions.json')
 
 	args = parser.parse_args()
 
@@ -77,10 +79,21 @@ if __name__ == '__main__':
 		split = json.load(f)
 
 	eval_data = split['eval']
-
-	eval_dataset = QAPredictionDataset(
-		eval_data
-	)
+	if args.mode == 'qa':
+		logging.info('Loading qa dataset...')
+		eval_dataset = QAPredictionDataset(
+			eval_data
+		)
+	elif args.mode == 'retrieval':
+		logging.info('Loading retrieval dataset...')
+		with open(args.misconceptions_path) as f:
+			misconceptions = json.load(f)
+		eval_dataset = QARetrievalPredictionDataset(
+			eval_data,
+			misconceptions
+		)
+	else:
+		raise ValueError(f'Unknown mode: {args.mode}')
 
 	logging.info(f'eval={len(eval_dataset)}')
 
