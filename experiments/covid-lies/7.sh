@@ -22,7 +22,7 @@ TRAIN_QA=false
 # QA run qa using trained model on validation set
 RUN_QA=false
 
-RUN_RETRIEVAL=true
+RUN_RETRIEVAL=false
 # QA run evaluation script on validation set
 EVAL_QA=false
 
