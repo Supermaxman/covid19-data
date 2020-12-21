@@ -73,6 +73,7 @@ if __name__ == '__main__':
 		macro_f1 += i_f1
 		macro_p += i_precision
 		macro_r += i_recall
+		print(f'{i} P={i_precision:.3f} R={i_recall:.3f} F1={i_f1:.3f}')
 
 	macro_f1 = macro_f1 / num_labels
 	macro_p = macro_p / num_labels
