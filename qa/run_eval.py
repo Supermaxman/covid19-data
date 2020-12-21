@@ -71,14 +71,14 @@ if __name__ == '__main__':
 		macro_p += i_precision
 		macro_r += i_recall
 		macro_f1 += i_f1
-		result_values.extend([f'{i_precision:.3f}', f'{i_recall:.3f}', f'{i_f1:.3f}'])
+		result_values.extend([f'{i_precision*100:.1f}', f'{i_recall*100:.1f}', f'{i_f1*100:.1f}'])
 
 	macro_f1 = macro_f1 / num_labels
 	macro_p = macro_p / num_labels
 	macro_r = macro_r / num_labels
 
 	result_titles = ['M-P', 'M-R', 'M-F1'] + result_titles
-	result_values = [f'{macro_p:.3f}', f'{macro_r:.3f}', f'{macro_f1:.3f}'] + result_values
+	result_values = [f'{macro_p*100:.1f}', f'{macro_r*100:.1f}', f'{macro_f1*100:.1f}'] + result_values
 
 	titles_text = ' '.join(result_titles)
 	values_text = ' '.join(result_values)
