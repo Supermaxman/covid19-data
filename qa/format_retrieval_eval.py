@@ -28,7 +28,7 @@ if __name__ == '__main__':
 			m_id = m_score['question_id']
 			# TODO come up with better ranking
 			# score = -irrelevant_score
-			score = agree_score
+			score = -agree_score
 			# score = agree_score
 			m_score_list[m_id].append(score)
 
