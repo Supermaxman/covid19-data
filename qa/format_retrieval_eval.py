@@ -10,7 +10,7 @@ if __name__ == '__main__':
 	parser.add_argument('-i', '--input_path', required=True)
 	parser.add_argument('-o', '--output_path', required=True)
 	args = parser.parse_args()
-	scores = {}
+	scores = defaultdict(list)
 	for input_path in args.input_path.split(','):
 		if input_path:
 			with open(input_path) as f:
