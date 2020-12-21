@@ -11,7 +11,10 @@ QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 QA_THRESHOLD=0.1
 
-GPUS=7
+QA_TRAIN_GPUS=7
+QA_EVAL_GPUS=7
+RETRIEVAL_EVAL_GPUS=4,5,6,7
+
 NUM_QA_SPLITS=5
 # qa flags
 # QA fine-tune qaing model using training set
@@ -62,7 +65,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --batch_size 8 \
           --learning_rate 5e-5 \
           --epochs 20 \
-          --gpus ${GPUS}
+          --gpus ${QA_TRAIN_GPUS}
     fi
 
     if [[ ${RUN_QA} = true ]]; then
@@ -77,7 +80,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --learning_rate 5e-5 \
           --epochs 20 \
           --load_trained_model \
-          --gpus ${GPUS} \
+          --gpus ${QA_EVAL_GPUS} \
         ; \
         python qa/format_qa_predictions.py \
           --input_path ${QA_SPLIT_PATH} \
@@ -91,11 +94,11 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --model_name ${QA_SPLIT_MODEL_NAME} \
           --output_path ${RETRIEVAL_SPLIT_PATH} \
           --max_seq_len 128 \
-          --batch_size 8 \
+          --batch_size 16 \
           --learning_rate 5e-5 \
           --epochs 20 \
           --load_trained_model \
-          --gpus ${GPUS} \
+          --gpus ${RETRIEVAL_EVAL_GPUS} \
           --mode retrieval \
           --misconceptions_path ${DATASET_PATH}/misconceptions.json  \
         ; \
