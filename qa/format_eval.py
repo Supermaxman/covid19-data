@@ -6,30 +6,6 @@ import argparse
 from collections import defaultdict
 import torch
 
-#
-# def load_predictions(input_path):
-# 	pred_list = []
-# 	for file_name in os.listdir(input_path):
-# 		if file_name.endswith('.pt'):
-# 			preds = torch.load(os.path.join(input_path, file_name))
-# 			pred_list.extend(preds)
-# 	scores = defaultdict(list)
-#
-# 	for prediction in pred_list:
-# 		tweet_id = prediction['id']
-# 		question_id = prediction['question_id']
-# 		scores[tweet_id].append(
-# 			{
-# 				'question_id': question_id,
-# 				'0_score': prediction['0_score'],
-# 				'1_score': prediction['1_score'],
-# 				'2_score': prediction['2_score'],
-# 			}
-# 		)
-#
-# 	return scores
-#
-
 
 def get_predictions(logits, threshold, score_func):
 	# non-zero class probs
@@ -57,10 +33,11 @@ if __name__ == '__main__':
 	parser.add_argument('-o', '--output_path', required=True)
 	parser.add_argument('-t', '--threshold', type=float, required=True)
 	args = parser.parse_args()
-
-	with open(args.input_path) as f:
-		# [twitter_id] -> [m_id, m_scores...]
-		scores = json.load(f)
+	scores = {}
+	for input_path in args.input_path.split(','):
+		with open(input_path) as f:
+			# [twitter_id] -> [m_id, m_scores...]
+			scores.update(json.load(f))
 
 	score_func = torch.nn.Softmax(dim=-1)
 	predictions = defaultdict(list)
