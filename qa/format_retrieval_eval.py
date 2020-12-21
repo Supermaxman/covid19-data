@@ -25,7 +25,8 @@ if __name__ == '__main__':
 			agree_score = m_score['1_score']
 			disagree_score = m_score['2_score']
 			# TODO come up with better ranking
-			score = -irrelevant_score
+			# score = -irrelevant_score
+			score = agree_score
 			predictions[tweet_id].append((m_score['question_id'], score))
 		predictions[tweet_id] = list(sorted(predictions[tweet_id], key=lambda x: x[1], reverse=True))
 
