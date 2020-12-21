@@ -27,10 +27,10 @@ def filter_by_label(data):
 
 
 def filter_by_misconception(data):
-	new_data = defaultdict(lambda: defaultdict(set))
+	new_data = defaultdict(set)
 	for tweet_id, labels in data.items():
 		for m_id, m_label in labels:
-			new_data[m_id][tweet_id].add(m_label)
+			new_data[m_id].add((tweet_id, m_label))
 	return new_data
 
 
@@ -60,24 +60,30 @@ if __name__ == '__main__':
 
 	class_labels = filter_by_label(labels)
 	class_run = filter_by_label(predictions)
+	result_titles = []
+	result_values = []
 	for i in range(num_labels):
 		i_precision, i_recall, i_f1 = calculate_metrics(
 			class_labels[i],
 			class_run[i]
 		)
-
+		result_titles.extend([f'{i}-P', f'{i}-R', f'{i}-F1'])
 		macro_p += i_precision
 		macro_r += i_recall
 		macro_f1 += i_f1
-		print(f'{i} P={i_precision:.3f} R={i_recall:.3f} F1={i_f1:.3f}')
+		result_values.extend([f'{i_precision:.3f}', f'{i_recall:.3f}', f'{i_f1:.3f}'])
 
 	macro_f1 = macro_f1 / num_labels
 	macro_p = macro_p / num_labels
 	macro_r = macro_r / num_labels
 
-	# overall eval
-	print(f'M P={macro_p:.3f} R={macro_r:.3f} F1={macro_f1:.3f}')
+	result_titles = ['M-P', 'M-R', 'M-F1'] + result_titles
+	result_values = [f'{macro_p:.3f}', f'{macro_r:.3f}', f'{macro_f1:.3f}'] + result_values
 
+	titles_text = ' '.join(result_titles)
+	values_text = ' '.join(result_values)
+	print(titles_text)
+	print(values_text)
 
 	# misinformation eval
 
