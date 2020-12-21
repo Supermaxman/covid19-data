@@ -31,7 +31,7 @@ QA_RUN_FILE_PATH=${QA_RUN_PATH}/${QA_RUN_NAME}.run
 QA_SPLIT_FILES=""
 # python qa/create_split.py -i ${COLLECTION_PATH} -o ${DATASET_PATH}
 
-for SPLIT in {1..${NUM_QA_SPLITS}}; do
+for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     QA_SPLIT_RUN_NAME=HLTRI_COVID_LIES_QA_SPLIT_${SPLIT}_${RUN_ID}
     QA_SPLIT_RUN_MODEL_NAME=HLTRI_COVID_LIES_QA_SPLIT_${SPLIT}_${RUN_ID}
     QA_SPLIT_MODEL_NAME=qa-${DATASET}-${QA_SPLIT_RUN_MODEL_NAME}
@@ -39,7 +39,7 @@ for SPLIT in {1..${NUM_QA_SPLITS}}; do
     QA_SPLIT_FILE_PATH=${QA_SPLIT_PATH}/${QA_SPLIT_RUN_NAME}.qa
 
     if [[ ${TRAIN_QA} = true ]]; then
-        echo "Training qa model..."
+        echo "Training split ${SPLIT} qa model..."
         python qa/qa_train.py \
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
@@ -52,7 +52,7 @@ for SPLIT in {1..${NUM_QA_SPLITS}}; do
     fi
 
     if [[ ${RUN_QA} = true ]]; then
-        echo "Running qa model..."
+        echo "Running split ${SPLIT} qa model..."
         python qa/qa_run.py \
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
