@@ -78,6 +78,7 @@ if __name__ == '__main__':
 	with open(args.split_path, 'r') as f:
 		split = json.load(f)
 
+	train_data = split['train']
 	eval_data = split['eval']
 	if args.mode == 'qa':
 		logging.info('Loading qa dataset...')
@@ -90,7 +91,8 @@ if __name__ == '__main__':
 			misconceptions = json.load(f)
 		eval_dataset = QARetrievalPredictionDataset(
 			eval_data,
-			misconceptions
+			misconceptions,
+			train_data
 		)
 	else:
 		raise ValueError(f'Unknown mode: {args.mode}')

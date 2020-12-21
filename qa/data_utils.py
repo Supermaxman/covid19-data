@@ -136,11 +136,20 @@ class QAPredictionDataset(Dataset):
 
 
 class QARetrievalPredictionDataset(Dataset):
-	def __init__(self, documents, misconceptions):
+	def __init__(self, documents, misconceptions, train_documents):
 		self.examples = []
 		self.num_docs = len(documents)
+		self.train_documents = train_documents
+		skip_sets = defaultdict(set)
+		for t_doc in train_documents:
+			for m in t_doc['misconceptions']:
+				skip_sets[t_doc['id_str']].add(m['misconception_id'])
+
 		for doc in documents:
 			for m_id, m in misconceptions.items():
+				# these represent examples on which this model was trained, therefore do not produce predictions
+				if m_id in skip_sets[doc['id_str']]:
+					continue
 				ex = {
 					'id': doc['id_str'],
 					'text': doc['full_text'],
