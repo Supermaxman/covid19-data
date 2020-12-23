@@ -26,7 +26,7 @@ RUN_RETRIEVAL=false
 # QA run evaluation script on validation set
 EVAL_QA=false
 
-EVAL_RETRIEVAL=false
+EVAL_RETRIEVAL=true
 
 DATASET_PATH=data
 COLLECTION_PATH=${DATASET_PATH}/downloaded_tweets_labeled.jsonl
