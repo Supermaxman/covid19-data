@@ -9,7 +9,7 @@ DATASET=covid-lies
 # major hyper-parameters for system
 QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
-QA_THRESHOLD=0.05 # 0.1
+QA_THRESHOLD=0.1
 
 QA_TRAIN_GPUS=7
 QA_EVAL_GPUS=7

@@ -31,7 +31,7 @@ if __name__ == '__main__':
 			logits = torch.tensor([irrelevant_score, agree_score, disagree_score], dtype=torch.float)
 			i_score, a_score, d_score = score_func(logits).tolist()
 			# TODO come up with better ranking
-			score = max(a_score, d_score)
+			score = -i_score
 			# score = agree_score
 			m_score_list[m_id].append(score)
 
