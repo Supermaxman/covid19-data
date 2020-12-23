@@ -131,14 +131,15 @@ class QALabeledDataset(Dataset):
 
 		for doc in documents:
 			for m in doc['misconceptions']:
+				m_label = label_text_to_id(m['label'])
 				ex = {
 					'id': doc['id_str'],
 					'text': doc['full_text'],
 					'question_id': m['misconception_id'],
 					'query': m['misconception_question'],
-					'label': label_text_to_id(m['label']),
+					'label': m_label,
 				}
-				self.num_labels[m['label']] += 1
+				self.num_labels[m_label] += 1
 				self.examples.append(ex)
 
 		self.num_examples = len(self.examples)
