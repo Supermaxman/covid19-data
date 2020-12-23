@@ -31,6 +31,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-lt', '--load_trained_model', default=False, action='store_true')
 	parser.add_argument('-o', '--output_path', required=True)
+	parser.add_argument('-hp', '--hera_path', default=None)
 	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
 	parser.add_argument('-m', '--mode', default='qa')
 	parser.add_argument('-mp', '--misconceptions_path', default='data/misconceptions.json')

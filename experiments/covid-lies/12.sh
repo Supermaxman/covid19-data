@@ -37,7 +37,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_HERA_QA} = true ]]; then
         echo "Running hera ${SPLIT} qa..."
         python qa/qa_predict.py \
-          --split_path ${DATASET_PATH}/split_${SPLIT}.json \
+          --hera_path ${DATASET_PATH}/all_tweets_labeled_hera.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
           --model_name qa-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${BASE_RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_HERA_${SPLIT}_${RUN_ID} \
