@@ -30,6 +30,7 @@ if __name__ == '__main__':
 	parser.add_argument('-lr', '--learning_rate', default=5e-6, type=float)
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-hp', '--hera_path', default=None)
+	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
 
 	args = parser.parse_args()
 
@@ -85,7 +86,8 @@ if __name__ == '__main__':
 
 	train_dataset = QALabeledDataset(
 		train_data,
-		hera_data
+		hera_data,
+		keep_real=args.keep_real
 	)
 
 	val_dataset = QALabeledDataset(

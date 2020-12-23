@@ -107,7 +107,7 @@ def hera_label_to_id(source, label_name):
 
 
 class QALabeledDataset(Dataset):
-	def __init__(self, documents, hera_documents=None):
+	def __init__(self, documents, hera_documents=None, keep_real=False):
 		self.examples = []
 		self.num_docs = len(documents)
 		self.num_labels = defaultdict(int)
@@ -119,7 +119,7 @@ class QALabeledDataset(Dataset):
 				question_text = info['topic']['question']
 				source = info['source'].lower()
 				label_name = m['label_name'].lower()
-				if label_name == 'real':
+				if not keep_real and label_name == 'real':
 					continue
 				m_label = hera_label_to_id(source, label_name)
 
