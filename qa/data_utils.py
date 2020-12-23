@@ -123,7 +123,10 @@ class QADataset(Dataset):
 				label_name = m['label_name'].lower()
 				if not keep_real and label_name == 'real':
 					continue
-				m_label = hera_label_to_id(source, label_name)
+				if 'predicted_label' in m:
+					m_label = m['predicted_label']
+				else:
+					m_label = hera_label_to_id(source, label_name)
 
 				ex = {
 					'id': doc['id_str'],
