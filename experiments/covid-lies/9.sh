@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # run names
-RUN_ID=7
+RUN_ID=9
 
 # collection
 DATASET=covid-lies
@@ -11,20 +11,20 @@ QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
 #export QA_PRE_MODEL_NAME=nboost/pt-biobert-base-msmarco
 QA_THRESHOLD=0.1
 
-QA_TRAIN_GPUS=7
-QA_EVAL_GPUS=7
+QA_TRAIN_GPUS=4,5,6,7
+QA_EVAL_GPUS=4,5,6,7
 RETRIEVAL_EVAL_GPUS=4,5,6,7
 
 NUM_QA_SPLITS=5
 # qa flags
 # QA fine-tune qaing model using training set
-TRAIN_QA=false
+TRAIN_QA=true
 # QA run qa using trained model on validation set
-RUN_QA=false
+RUN_QA=true
+# QA run evaluation script on validation set
+EVAL_QA=true
 
 RUN_RETRIEVAL=false
-# QA run evaluation script on validation set
-EVAL_QA=false
 
 EVAL_RETRIEVAL=false
 
@@ -62,6 +62,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
           --model_name ${QA_SPLIT_MODEL_NAME} \
+          --hera_path ${DATASET_PATH}/all_tweets_labeled_hera.json \
           --max_seq_len 128 \
           --batch_size 8 \
           --learning_rate 5e-5 \

@@ -29,6 +29,7 @@ if __name__ == '__main__':
 	parser.add_argument('-csl', '--calc_seq_len', default=False, action='store_true')
 	parser.add_argument('-lr', '--learning_rate', default=5e-6, type=float)
 	parser.add_argument('-gpu', '--gpus', default='0')
+	parser.add_argument('-hp', '--hera_path', default=None)
 
 	args = parser.parse_args()
 
@@ -74,8 +75,17 @@ if __name__ == '__main__':
 	train_data = split['train']
 	val_data = split['eval']
 
+	hera_data = None
+	if args.hera_path is not None:
+		logging.info(f'Loading HERA dataset: {args.hera_path}')
+		with open(args.hera_path, 'r') as f:
+			hera_data = json.load(f)
+
+		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
+
 	train_dataset = QALabeledDataset(
-		train_data
+		train_data,
+		hera_data
 	)
 
 	val_dataset = QALabeledDataset(

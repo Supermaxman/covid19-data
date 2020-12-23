@@ -75,11 +75,60 @@ def label_text_to_id(label):
 		raise ValueError(f'Unknown label: {label}')
 
 
+def hera_label_to_id(source, label_name):
+	source = source.lower()
+	label_name = label_name.lower()
+	if 'real' in source:
+		# source is a true fact
+		if label_name == 'real':
+			# agree
+			return 1
+		elif label_name == 'refutes':
+			# refutation of true fact is disagreement
+			return 2
+		elif 'severe' in label_name:
+			# severe misinformation of any level is a disagreement with the source
+			return 2
+		else:
+			raise ValueError(f'Unknown label name: {label_name}')
+	else:
+		# source is misinformation
+		if label_name == 'real':
+			# disagree, if source is fake but tweet is real then we have disagreement with source
+			return 2
+		elif label_name == 'refutes':
+			# refutation of misinformation is disagreement
+			return 2
+		elif 'severe' in label_name:
+			# severe misinformation of any level is agreement with the source
+			return 1
+		else:
+			raise ValueError(f'Unknown label name: {label_name}')
+
+
 class QALabeledDataset(Dataset):
-	def __init__(self, documents):
+	def __init__(self, documents, hera_documents=None):
 		self.examples = []
 		self.num_docs = len(documents)
 		self.num_labels = defaultdict(int)
+		if hera_documents is not None:
+			for doc in hera_documents:
+				m = doc['misinformation']
+				info = doc['info']
+				question_id = info['index']
+				question_text = info['topic']['question']
+				m_label = hera_label_to_id(info['source'], m['label_name'])
+
+				ex = {
+					'id': doc['id_str'],
+					'text': doc['full_text'],
+					'question_id': question_id,
+					'query': question_text,
+					'label': m_label,
+				}
+				self.num_labels[m_label] += 1
+				self.examples.append(ex)
+
 		for doc in documents:
 			for m in doc['misconceptions']:
 				ex = {
