@@ -117,7 +117,11 @@ class QALabeledDataset(Dataset):
 				info = doc['info']
 				question_id = info['index']
 				question_text = info['topic']['question']
-				m_label = hera_label_to_id(info['source'], m['label_name'])
+				source = info['source'].lower()
+				label_name = m['label_name'].lower()
+				if label_name == 'real':
+					continue
+				m_label = hera_label_to_id(source, label_name)
 
 				ex = {
 					'id': doc['id_str'],
