@@ -16,6 +16,8 @@ def calculate_mrr(labels, scores):
 			r_rank = 1.0 / rank
 			if m_id in t_labels:
 				t_mrr += r_rank
+				break
+		# t_mrr = t_mrr / len(t_labels)
 		t_mrr = t_mrr / len(t_labels)
 		mrr += t_mrr
 	mrr = mrr / len(labels)
@@ -32,7 +34,8 @@ def calculate_hits(labels, scores, h):
 			if m_id in t_labels:
 				t_hits += 1.0
 		# TODO is this correct?
-		t_hits = t_hits / h
+		# t_hits = t_hits / h
+		t_hits = t_hits / max(h, len(t_labels))
 		hits += t_hits
 	hits = hits / len(labels)
 	return hits
