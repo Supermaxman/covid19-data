@@ -7,6 +7,7 @@ from collections import defaultdict
 
 def calculate_mrr(labels, scores):
 	mrr = 0.0
+	# TODO is this correct? MRR seems strange here
 	for tweet_id in labels:
 		t_mrr = 0.0
 		t_labels = labels[tweet_id]
@@ -30,7 +31,7 @@ def calculate_hits(labels, scores, h):
 		for m_id, m_score in t_scores[:h]:
 			if m_id in t_labels:
 				t_hits += 1.0
-		# TODO is this correct? what if len(t_labels) < h?
+		# TODO is this correct?
 		t_hits = t_hits / h
 		hits += t_hits
 	hits = hits / len(labels)
