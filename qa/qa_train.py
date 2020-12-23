@@ -8,7 +8,7 @@ from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import QABert
+from model_utils import QABert, get_device_id
 from data_utils import QALabeledDataset, QABatchCollator
 
 import torch
@@ -31,6 +31,8 @@ if __name__ == '__main__':
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-hp', '--hera_path', default=None)
 	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
+	parser.add_argument('-lt', '--load_checkpoint', default=None)
+	parser.add_argument('-ft', '--fine_tune', default=False, action='store_true')
 
 	args = parser.parse_args()
 
@@ -72,8 +74,9 @@ if __name__ == '__main__':
 
 	with open(args.split_path, 'r') as f:
 		split = json.load(f)
-
-	train_data = split['train']
+	train_data = None
+	if args.fine_tune:
+		train_data = split['train']
 	val_data = split['eval']
 
 	hera_data = None
@@ -85,8 +88,8 @@ if __name__ == '__main__':
 		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
 
 	train_dataset = QALabeledDataset(
-		train_data,
-		hera_data,
+		documents=train_data,
+		hera_documents=hera_data,
 		keep_real=args.keep_real
 	)
 
@@ -157,9 +160,14 @@ if __name__ == '__main__':
 		updates_total=updates_total,
 		weight_decay=0.0,
 		torch_cache_dir=args.torch_cache_dir,
+		load_pretrained=args.load_checkpoint is not None
 	)
 	tokenizer.save_pretrained(save_directory)
 	model.config.save_pretrained(save_directory)
+	if args.load_checkpoint is not None:
+		# load checkpoint from pre-trained model
+		logging.warning(f'Loading weights from trained checkpoint: {args.load_checkpoint}...')
+		model.load_state_dict(torch.load(args.load_checkpoint))
 
 	logger = pl_loggers.TensorBoardLogger(
 		save_dir=save_directory,
@@ -194,10 +202,15 @@ if __name__ == '__main__':
 			deterministic=deterministic,
 			checkpoint_callback=False,
 		)
+	try:
+		logging.info('Training...')
+		trainer.fit(model, train_data_loader, val_data_loader)
+	except Exception:
+		logging.exception('Exception while training:')
 
-	logging.info('Training...')
-	trainer.fit(model, train_data_loader, val_data_loader)
-	logging.info('Saving checkpoint...')
-	model.to('cpu')
-	torch.save(model.state_dict(), checkpoint_path)
+	device_id = get_device_id()
+	if device_id == 0 or '0' in device_id:
+		logging.info(f'Saving checkpoint on device {device_id}...')
+		model.to('cpu')
+		torch.save(model.state_dict(), checkpoint_path)
 

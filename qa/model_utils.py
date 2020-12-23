@@ -11,7 +11,7 @@ import os
 class QABert(pl.LightningModule):
 	def __init__(
 			self, pre_model_name, learning_rate, weight_decay, lr_warmup, updates_total,
-			torch_cache_dir, predict_mode=False, predict_path=None):
+			torch_cache_dir, predict_mode=False, predict_path=None, load_pretrained=False):
 		super().__init__()
 		self.pre_model_name = pre_model_name
 		self.torch_cache_dir = torch_cache_dir
@@ -21,13 +21,8 @@ class QABert(pl.LightningModule):
 		self.updates_total = updates_total
 		self.predict_mode = predict_mode
 		self.predict_path = predict_path
-		if not self.predict_mode:
-			self.bert = BertModel.from_pretrained(
-				pre_model_name,
-				cache_dir=torch_cache_dir
-			)
-			self.config = self.bert.config
-		else:
+		self.load_pretrained = load_pretrained
+		if self.predict_mode or self.load_pretrained:
 			# no need to load pre-trained weights since we will be loading whole model's
 			# fine-tuned weights from checkpoint.
 			self.config = BertConfig.from_pretrained(
@@ -35,6 +30,12 @@ class QABert(pl.LightningModule):
 				cache_dir=torch_cache_dir
 			)
 			self.bert = BertModel(self.config)
+		else:
+			self.bert = BertModel.from_pretrained(
+				pre_model_name,
+				cache_dir=torch_cache_dir
+			)
+			self.config = self.bert.config
 
 		self.classifier = nn.Linear(
 			self.config.hidden_size,

@@ -107,9 +107,8 @@ def hera_label_to_id(source, label_name):
 
 
 class QALabeledDataset(Dataset):
-	def __init__(self, documents, hera_documents=None, keep_real=False):
+	def __init__(self, documents=None, hera_documents=None, keep_real=False):
 		self.examples = []
-		self.num_docs = len(documents)
 		self.num_labels = defaultdict(int)
 		if hera_documents is not None:
 			for doc in hera_documents:
@@ -132,19 +131,19 @@ class QALabeledDataset(Dataset):
 				}
 				self.num_labels[m_label] += 1
 				self.examples.append(ex)
-
-		for doc in documents:
-			for m in doc['misconceptions']:
-				m_label = label_text_to_id(m['label'])
-				ex = {
-					'id': doc['id_str'],
-					'text': doc['full_text'],
-					'question_id': m['misconception_id'],
-					'query': m['misconception_question'],
-					'label': m_label,
-				}
-				self.num_labels[m_label] += 1
-				self.examples.append(ex)
+		if documents is not None:
+			for doc in documents:
+				for m in doc['misconceptions']:
+					m_label = label_text_to_id(m['label'])
+					ex = {
+						'id': doc['id_str'],
+						'text': doc['full_text'],
+						'question_id': m['misconception_id'],
+						'query': m['misconception_question'],
+						'label': m_label,
+					}
+					self.num_labels[m_label] += 1
+					self.examples.append(ex)
 
 		self.num_examples = len(self.examples)
 		random.shuffle(self.examples)

@@ -7,7 +7,9 @@
       <w>logits</w>
       <w>pred</w>
       <w>preds</w>
+      <w>pretrained</w>
       <w>probs</w>
+      <w>warmup</w>
     </words>
   </dictionary>
 </component>
