@@ -1,7 +1,6 @@
 
 import json
 import argparse
-from collections import defaultdict
 import torch
 
 
@@ -28,25 +27,34 @@ def get_predictions(logits, threshold, score_func):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-i', '--input_path', required=True)
+	parser.add_argument('-h', '--hera_path', required=True)
 	parser.add_argument('-o', '--output_path', required=True)
 	parser.add_argument('-t', '--threshold', type=float, required=True)
 	args = parser.parse_args()
-	scores = defaultdict(list)
-	for input_path in args.input_path.split(','):
-		if input_path:
-			with open(input_path) as f:
-				# [twitter_id] -> [m_id, m_scores...]
-				f_scores = json.load(f)
-				for tweet_id, t_scores in f_scores.items():
-					scores[tweet_id].extend(t_scores)
+	scores = {}
+	with open(args.input_path) as f:
+			# [twitter_id] -> (m_id, m_scores...)
+			f_scores = json.load(f)
+			for tweet_id, t_scores in f_scores.items():
+				# should only be one for each hera tweet
+				scores[tweet_id] = t_scores[0]
 
 	score_func = torch.nn.Softmax(dim=-1)
-	predictions = defaultdict(list)
-	for tweet_id, m_scores in scores.items():
-		for m_score in m_scores:
-			logits = torch.tensor([m_score['0_score'], m_score['1_score'], m_score['2_score']], dtype=torch.float)
-			preds = get_predictions(logits, args.threshold, score_func).tolist()
-			predictions[tweet_id].append((m_score['question_id'], preds))
+	predictions = {}
+	for tweet_id, m_score in scores.items():
+		logits = torch.tensor([m_score['0_score'], m_score['1_score'], m_score['2_score']], dtype=torch.float)
+		preds = get_predictions(logits, args.threshold, score_func).tolist()
+		predictions[tweet_id] = preds
+
+	with open(args.hera_path) as f:
+		tweets = json.load(f)
+		tweets = {t['id_str']: t for t in tweets}
+
+	filtered_tweets = []
+	for tweet_id, pred in predictions.items():
+		tweet = tweets[tweet_id]
+		tweet['misconceptions']['predicted_label'] = pred
+		filtered_tweets.append(tweet)
 
 	with open(args.output_path, 'w') as f:
-		json.dump(predictions, f, indent=2)
+		json.dump(filtered_tweets, f, indent=2)

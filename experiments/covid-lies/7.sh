@@ -66,6 +66,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --batch_size 8 \
           --learning_rate 5e-5 \
           --epochs 20 \
+          --fine_tune \
           --gpus ${QA_TRAIN_GPUS}
     fi
 
@@ -78,8 +79,6 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --output_path ${QA_SPLIT_PATH} \
           --max_seq_len 128 \
           --batch_size 8 \
-          --learning_rate 5e-5 \
-          --epochs 20 \
           --load_trained_model \
           --gpus ${QA_EVAL_GPUS} \
         ; \
@@ -96,8 +95,6 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
           --output_path ${RETRIEVAL_SPLIT_PATH} \
           --max_seq_len 128 \
           --batch_size 16 \
-          --learning_rate 5e-5 \
-          --epochs 20 \
           --load_trained_model \
           --gpus ${RETRIEVAL_EVAL_GPUS} \
           --mode retrieval \

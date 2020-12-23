@@ -28,11 +28,12 @@ def write_jsonl(data, path):
 
 
 class QABatchCollator(object):
-	def __init__(self, tokenizer,  max_seq_len: int, force_max_seq_len: bool):
+	def __init__(self, tokenizer,  max_seq_len: int, force_max_seq_len: bool, labeled=True):
 		super().__init__()
 		self.tokenizer = tokenizer
 		self.max_seq_len = max_seq_len
 		self.force_max_seq_len = force_max_seq_len
+		self.labeled = labeled
 
 	def __call__(self, examples):
 		ids = []
@@ -41,7 +42,8 @@ class QABatchCollator(object):
 		sequences = []
 		for ex in examples:
 			ids.append(ex['id'])
-			labels.append(ex['label'])
+			if self.labeled:
+				labels.append(ex['label'])
 			question_ids.append(ex['question_id'])
 			sequences.append((ex['query'], ex['text']))
 		tokenizer_batch = self.tokenizer.batch_encode_plus(
@@ -55,11 +57,12 @@ class QABatchCollator(object):
 		batch = {
 			'id': ids,
 			'question_id': question_ids,
-			'labels': torch.tensor(labels, dtype=torch.long),
 			'input_ids': tokenizer_batch['input_ids'],
 			'attention_mask': tokenizer_batch['attention_mask'],
 			'token_type_ids': tokenizer_batch['token_type_ids'],
 		}
+		if self.labeled:
+			batch['labels'] = torch.tensor(labels, dtype=torch.long)
 
 		return batch
 
@@ -106,8 +109,8 @@ def hera_label_to_id(source, label_name):
 			raise ValueError(f'Unknown label name: {label_name}')
 
 
-class QALabeledDataset(Dataset):
-	def __init__(self, documents=None, hera_documents=None, keep_real=False):
+class QADataset(Dataset):
+	def __init__(self, documents=None, hera_documents=None, keep_real=False, labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
 		if hera_documents is not None:
@@ -134,7 +137,9 @@ class QALabeledDataset(Dataset):
 		if documents is not None:
 			for doc in documents:
 				for m in doc['misconceptions']:
-					m_label = label_text_to_id(m['label'])
+					m_label = None
+					if labeled:
+						m_label = label_text_to_id(m['label'])
 					ex = {
 						'id': doc['id_str'],
 						'text': doc['full_text'],
@@ -147,34 +152,6 @@ class QALabeledDataset(Dataset):
 
 		self.num_examples = len(self.examples)
 		random.shuffle(self.examples)
-
-	def __len__(self):
-		return len(self.examples)
-
-	def __getitem__(self, idx):
-		if torch.is_tensor(idx):
-			idx = idx.tolist()
-
-		example = self.examples[idx]
-
-		return example
-
-
-class QAPredictionDataset(Dataset):
-	def __init__(self, documents):
-		self.examples = []
-		self.num_docs = len(documents)
-		for doc in documents:
-			for m in doc['misconceptions']:
-				ex = {
-					'id': doc['id_str'],
-					'text': doc['full_text'],
-					'question_id': m['misconception_id'],
-					'query': m['misconception_question'],
-				}
-				self.examples.append(ex)
-
-		self.num_examples = len(self.examples)
 
 	def __len__(self):
 		return len(self.examples)
@@ -223,37 +200,3 @@ class QARetrievalPredictionDataset(Dataset):
 		example = self.examples[idx]
 
 		return example
-
-
-class QAPredictionCollator(object):
-	def __init__(self, tokenizer,  max_seq_len: int, force_max_seq_len: bool):
-		super().__init__()
-		self.tokenizer = tokenizer
-		self.max_seq_len = max_seq_len
-		self.force_max_seq_len = force_max_seq_len
-
-	def __call__(self, examples):
-		ids = []
-		question_ids = []
-		sequences = []
-		for ex in examples:
-			ids.append(ex['id'])
-			question_ids.append(ex['question_id'])
-			sequences.append((ex['query'], ex['text']))
-		tokenizer_batch = self.tokenizer.batch_encode_plus(
-			batch_text_or_text_pairs=sequences,
-			add_special_tokens=True,
-			padding='max_length' if self.force_max_seq_len else 'longest',
-			return_tensors='pt',
-			truncation='only_second',
-			max_length=self.max_seq_len
-		)
-		batch = {
-			'id': ids,
-			'question_id': question_ids,
-			'input_ids': tokenizer_batch['input_ids'],
-			'attention_mask': tokenizer_batch['attention_mask'],
-			'token_type_ids': tokenizer_batch['token_type_ids'],
-		}
-
-		return batch

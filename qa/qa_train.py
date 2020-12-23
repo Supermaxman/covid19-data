@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
 from model_utils import QABert, get_device_id
-from data_utils import QALabeledDataset, QABatchCollator
+from data_utils import QADataset, QABatchCollator
 
 import torch
 
@@ -87,13 +87,13 @@ if __name__ == '__main__':
 
 		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
 
-	train_dataset = QALabeledDataset(
+	train_dataset = QADataset(
 		documents=train_data,
 		hera_documents=hera_data,
 		keep_real=args.keep_real
 	)
 
-	val_dataset = QALabeledDataset(
+	val_dataset = QADataset(
 		val_data
 	)
 

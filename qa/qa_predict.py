@@ -9,14 +9,14 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
 from model_utils import QABert
-from data_utils import QAPredictionDataset, QAPredictionCollator, QARetrievalPredictionDataset
+from data_utils import QADataset, QABatchCollator, QARetrievalPredictionDataset
 
 import torch
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-s', '--split_path', required=True)
+	parser.add_argument('-s', '--split_path', default=None)
 	parser.add_argument('-pm', '--pre_model_name', default='nboost/pt-biobert-base-msmarco')
 	parser.add_argument('-mn', '--model_name', default='pt-biobert-base-msmarco')
 	parser.add_argument('-sd', '--save_directory', default='models')
@@ -31,6 +31,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-lt', '--load_trained_model', default=False, action='store_true')
 	parser.add_argument('-o', '--output_path', required=True)
+	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
 	parser.add_argument('-m', '--mode', default='qa')
 	parser.add_argument('-mp', '--misconceptions_path', default='data/misconceptions.json')
 
@@ -73,17 +74,31 @@ if __name__ == '__main__':
 
 	logging.info(f'Loading tokenizer: {args.pre_model_name}')
 	tokenizer = AutoTokenizer.from_pretrained(args.pre_model_name)
-	logging.info(f'Loading dataset: {args.split_path}')
+	train_data = None
+	eval_data = None
+	if args.split_path is not None:
+		logging.info(f'Loading dataset: {args.split_path}')
 
-	with open(args.split_path, 'r') as f:
-		split = json.load(f)
+		with open(args.split_path, 'r') as f:
+			split = json.load(f)
 
-	train_data = split['train']
-	eval_data = split['eval']
+		train_data = split['train']
+		eval_data = split['eval']
+
+	hera_data = None
+	if args.hera_path is not None:
+		logging.info(f'Loading HERA dataset: {args.hera_path}')
+		with open(args.hera_path, 'r') as f:
+			hera_data = json.load(f)
+		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
+
 	if args.mode == 'qa':
 		logging.info('Loading qa dataset...')
-		eval_dataset = QAPredictionDataset(
-			eval_data
+		eval_dataset = QADataset(
+			documents=train_data,
+			hera_documents=hera_data,
+			keep_real=args.keep_real,
+			labeled=False
 		)
 	elif args.mode == 'retrieval':
 		logging.info('Loading retrieval dataset...')
@@ -104,10 +119,11 @@ if __name__ == '__main__':
 		batch_size=args.batch_size,
 		shuffle=False,
 		num_workers=num_workers,
-		collate_fn=QAPredictionCollator(
+		collate_fn=QABatchCollator(
 			tokenizer,
 			args.max_seq_len,
-			args.use_tpus
+			args.use_tpus,
+			labeled=False
 		)
 	)
 
