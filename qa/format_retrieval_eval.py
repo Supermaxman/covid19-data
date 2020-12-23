@@ -3,6 +3,7 @@ import json
 import argparse
 from collections import defaultdict
 import numpy as np
+import torch
 
 
 if __name__ == '__main__':
@@ -19,6 +20,7 @@ if __name__ == '__main__':
 					scores[tweet_id].extend(t_scores)
 
 	predictions = defaultdict(list)
+	score_func = torch.nn.Softmax(dim=-1)
 	for tweet_id, m_scores in scores.items():
 		m_score_list = defaultdict(list)
 		for m_score in m_scores:
@@ -26,8 +28,10 @@ if __name__ == '__main__':
 			agree_score = m_score['1_score']
 			disagree_score = m_score['2_score']
 			m_id = m_score['question_id']
+			logits = torch.tensor([irrelevant_score, agree_score, disagree_score], dtype=torch.float)
+			i_score, a_score, d_score = score_func(logits).tolist()
 			# TODO come up with better ranking
-			score = -irrelevant_score
+			score = max(a_score, d_score)
 			# score = agree_score
 			m_score_list[m_id].append(score)
 
