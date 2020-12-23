@@ -130,7 +130,7 @@ fi
 
 
 if [[ ${EVAL_RETRIEVAL} = true ]]; then
-    echo "Evaluating qa model..."
+    echo "Evaluating retrieval model..."
     mkdir -p ${RETRIEVAL_RUN_PATH}
     python qa/format_retrieval_eval.py \
       --input_path ${RETRIEVAL_SPLIT_FILES} \

@@ -18,7 +18,7 @@ def calculate_mrr(labels, scores):
 				t_mrr += r_rank
 				break
 		# t_mrr = t_mrr / len(t_labels)
-		t_mrr = t_mrr / len(t_labels)
+		t_mrr = t_mrr
 		mrr += t_mrr
 	mrr = mrr / len(labels)
 	return mrr
@@ -35,7 +35,7 @@ def calculate_hits(labels, scores, h):
 				t_hits += 1.0
 		# TODO is this correct?
 		# t_hits = t_hits / h
-		t_hits = t_hits / max(h, len(t_labels))
+		t_hits = t_hits / min(h, len(t_labels))
 		hits += t_hits
 	hits = hits / len(labels)
 	return hits
