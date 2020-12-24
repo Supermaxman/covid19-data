@@ -60,7 +60,7 @@ for (( SPLIT=1; SPLIT<=${NUM_QA_SPLITS}; SPLIT++ )) do
     if [[ ${PRE_TRAIN_QA} = true ]]; then
         echo "Training split pre ${SPLIT} qa model..."
         python qa/qa_train.py \
-          --split_path ${DATASET_PATH}/split_1.json \
+          --split_path ${DATASET_PATH}/split_${SPLIT}.json \
           --pre_model_name ${QA_PRE_MODEL_NAME} \
           --model_name qa-${DATASET}-${RUN_NAME}_SPLIT_PRE_${SPLIT}_${RUN_ID} \
           --hera_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_HERA_${SPLIT}_${RUN_ID}/hera_stance.json \
