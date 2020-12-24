@@ -1,6 +1,7 @@
 
 import json
 import argparse
+from collections import defaultdict
 import torch
 
 
@@ -55,10 +56,13 @@ if __name__ == '__main__':
 		tweets = {t['id_str']: t for t in tweets}
 
 	filtered_tweets = []
+	pred_counts = defaultdict(int)
 	for tweet_id, pred in predictions.items():
 		tweet = tweets[tweet_id]
 		tweet['misinformation']['predicted_label'] = pred
+		pred_counts[pred] += 1
 		filtered_tweets.append(tweet)
 
+	print(f'label_counts={pred_counts}')
 	with open(args.output_path, 'w') as f:
 		json.dump(filtered_tweets, f, indent=2)
