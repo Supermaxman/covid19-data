@@ -83,7 +83,6 @@ if __name__ == '__main__':
 		with open(args.split_path, 'r') as f:
 			split = json.load(f)
 
-		train_data = split['train']
 		eval_data = split['eval']
 
 	hera_data = None
@@ -96,7 +95,7 @@ if __name__ == '__main__':
 	if args.mode == 'qa':
 		logging.info('Loading qa dataset...')
 		eval_dataset = QADataset(
-			documents=train_data,
+			documents=eval_data,
 			hera_documents=hera_data,
 			keep_real=args.keep_real,
 			labeled=False
@@ -108,7 +107,7 @@ if __name__ == '__main__':
 		eval_dataset = QARetrievalPredictionDataset(
 			eval_data,
 			misconceptions,
-			train_data
+			split['train']
 		)
 	else:
 		raise ValueError(f'Unknown mode: {args.mode}')

@@ -20,7 +20,7 @@ QA_EVAL_GPUS=4
 NUM_QA_SPLITS=5
 # qa flags
 # QA fine-tune qaing model using training set
-TRAIN_QA=true
+TRAIN_QA=false
 # QA run qa using trained model on validation set
 RUN_QA=true
 # QA run evaluation script on validation set

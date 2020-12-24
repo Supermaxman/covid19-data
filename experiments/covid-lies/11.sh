@@ -23,7 +23,7 @@ PRE_TRAIN_QA=false
 TRAIN_QA=false
 NUM_QA_SPLITS=5
 # QA run qa using trained model on validation set
-RUN_QA=false
+RUN_QA=true
 # QA run evaluation script on validation set
 EVAL_QA=true
 
