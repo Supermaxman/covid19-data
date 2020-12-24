@@ -34,6 +34,7 @@ if __name__ == '__main__':
 	scores = defaultdict(list)
 	for input_path in args.input_path.split(','):
 		if input_path:
+			print(f'{input_path}')
 			with open(input_path) as f:
 				# [twitter_id] -> [m_id, m_scores...]
 				f_scores = json.load(f)
