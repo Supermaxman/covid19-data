@@ -27,9 +27,11 @@ def get_predictions(logits, threshold, score_func):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-i', '--input_path', required=True)
-	parser.add_argument('-h', '--hera_path', required=True)
+	parser.add_argument('-hp', '--hera_path', required=True)
 	parser.add_argument('-o', '--output_path', required=True)
 	parser.add_argument('-t', '--threshold', type=float, required=True)
+	parser.add_argument('-sna', '--skip_na', default=False, action='store_true')
+
 	args = parser.parse_args()
 	scores = {}
 	with open(args.input_path) as f:
@@ -44,6 +46,8 @@ if __name__ == '__main__':
 	for tweet_id, m_score in scores.items():
 		logits = torch.tensor([m_score['0_score'], m_score['1_score'], m_score['2_score']], dtype=torch.float)
 		preds = get_predictions(logits, args.threshold, score_func).tolist()
+		if args.skip_na and preds == 0:
+			continue
 		predictions[tweet_id] = preds
 
 	with open(args.hera_path) as f:
