@@ -57,7 +57,7 @@ if __name__ == '__main__':
 	filtered_tweets = []
 	for tweet_id, pred in predictions.items():
 		tweet = tweets[tweet_id]
-		tweet['misconceptions']['predicted_label'] = pred
+		tweet['misinformation']['predicted_label'] = pred
 		filtered_tweets.append(tweet)
 
 	with open(args.output_path, 'w') as f:
