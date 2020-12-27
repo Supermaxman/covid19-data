@@ -10,7 +10,7 @@ DATASET=covid-lies
 
 # major hyper-parameters for system
 QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-QA_THRESHOLD=0.3
+QA_THRESHOLD=0.4
 #QA_THRESHOLD=0.1
 
 QA_BATCH_SIZE=8
