@@ -10,7 +10,8 @@ DATASET=covid-lies
 
 # major hyper-parameters for system
 QA_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-QA_THRESHOLD=0.1
+QA_THRESHOLD=0.3
+#QA_THRESHOLD=0.1
 
 QA_BATCH_SIZE=8
 QA_MAX_SEQ_LEN=128
@@ -20,11 +21,11 @@ QA_EVAL_GPUS=5
 
 NUM_QA_SPLITS=5
 # qa flags
-RUN_HERA_QA=true
-PRE_TRAIN_QA=true
-TRAIN_QA=true
+RUN_HERA_QA=false
+PRE_TRAIN_QA=false
+TRAIN_QA=false
 # QA run qa using trained model on validation set
-RUN_QA=true
+RUN_QA=false
 # QA run evaluation script on validation set
 EVAL_QA=true
 
