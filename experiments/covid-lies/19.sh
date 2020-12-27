@@ -20,9 +20,9 @@ QA_EVAL_GPUS=5
 
 NUM_QA_SPLITS=5
 # qa flags
-RUN_HERA_QA=false
-PRE_TRAIN_QA=false
-TRAIN_QA=false
+RUN_HERA_QA=true
+PRE_TRAIN_QA=true
+TRAIN_QA=true
 # QA run qa using trained model on validation set
 RUN_QA=true
 # QA run evaluation script on validation set
