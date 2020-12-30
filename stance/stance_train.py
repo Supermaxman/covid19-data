@@ -210,6 +210,9 @@ if __name__ == '__main__':
 		lr_warmup=0.1,
 		updates_total=updates_total,
 		weight_decay=0.0,
+		sentiment_labels=sentiment_labels,
+		emotion_labels=emotion_labels,
+		irony_labels=irony_labels,
 		torch_cache_dir=args.torch_cache_dir,
 		load_pretrained=args.load_checkpoint is not None
 	)

@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 import torch.distributed as dist
 import os
 import math
+import logging
 
 
 class CovidTwitterStanceModel(pl.LightningModule):
@@ -44,6 +45,7 @@ class CovidTwitterStanceModel(pl.LightningModule):
 		self.has_sentiment = False
 		self.sentiment_labels = sentiment_labels
 		if sentiment_labels is not None:
+			logging.info('Using sentiment data...')
 			self.sentiment_embeddings = nn.Embedding(
 				num_embeddings=len(sentiment_labels),
 				embedding_dim=self.config.hidden_size
@@ -58,6 +60,7 @@ class CovidTwitterStanceModel(pl.LightningModule):
 		self.has_emotion = False
 		self.emotion_labels = emotion_labels
 		if emotion_labels is not None:
+			logging.info('Using emotion data...')
 			self.emotion_embeddings = nn.Embedding(
 				num_embeddings=len(emotion_labels),
 				embedding_dim=self.config.hidden_size
@@ -72,6 +75,7 @@ class CovidTwitterStanceModel(pl.LightningModule):
 		self.has_irony = False
 		self.irony_labels = irony_labels
 		if irony_labels is not None:
+			logging.info('Using irony data...')
 			self.irony_embeddings = nn.Embedding(
 				num_embeddings=len(irony_labels),
 				embedding_dim=self.config.hidden_size
