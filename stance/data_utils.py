@@ -110,14 +110,22 @@ def hera_label_to_id(source, label_name):
 
 
 class QADataset(Dataset):
-	def __init__(self, documents=None, hera_documents=None, keep_real=False, labeled=True):
+	def __init__(self, documents=None, hera_documents=None,
+							 keep_real=False, sentiment_preds=None, emotion_preds=None, irony_preds=None, labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
+		if sentiment_preds is None:
+			sentiment_preds = {}
+		if emotion_preds is None:
+			emotion_preds = {}
+		if irony_preds is None:
+			irony_preds = {}
 		if hera_documents is not None:
 			for doc in hera_documents:
 				m = doc['misinformation']
 				info = doc['info']
 				question_id = info['index']
+				raise NotImplementedError('Need to implement this for HERA')
 				question_text = info['topic']['question']
 				source = info['source'].lower()
 				label_name = m['label_name'].lower()
@@ -147,7 +155,7 @@ class QADataset(Dataset):
 						'id': doc['id_str'],
 						'text': doc['full_text'],
 						'question_id': m['misconception_id'],
-						'query': m['misconception_question'],
+						'query': m['misconception_text'],
 						'label': m_label,
 					}
 					self.num_labels[m_label] += 1

@@ -33,6 +33,9 @@ if __name__ == '__main__':
 	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
 	parser.add_argument('-lt', '--load_checkpoint', default=None)
 	parser.add_argument('-ft', '--fine_tune', default=False, action='store_true')
+	parser.add_argument('-sp', '--sentiment_path', default=None)
+	parser.add_argument('-ep', '--emotion_path', default=None)
+	parser.add_argument('-ip', '--irony_path', default=None)
 
 	args = parser.parse_args()
 
@@ -87,14 +90,38 @@ if __name__ == '__main__':
 
 		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
 
+	sentiment_preds = None
+	if args.sentiment_path is not None:
+		with open(args.sentiment_path, 'r') as f:
+			sentiment_preds = json.load(f)
+		logging.info(f'Loaded sentiment predictions.')
+
+	emotion_preds = None
+	if args.emotion_path is not None:
+		with open(args.emotion_path, 'r') as f:
+			emotion_preds = json.load(f)
+		logging.info(f'Loaded emotion predictions.')
+
+	irony_preds = None
+	if args.irony_path is not None:
+		with open(args.irony_path, 'r') as f:
+			irony_preds = json.load(f)
+		logging.info(f'Loaded irony predictions.')
+
 	train_dataset = QADataset(
 		documents=train_data,
 		hera_documents=hera_data,
-		keep_real=args.keep_real
+		keep_real=args.keep_real,
+		sentiment_preds=sentiment_preds,
+		emotion_preds=emotion_preds,
+		irony_preds=irony_preds,
 	)
 
 	val_dataset = QADataset(
-		val_data
+		documents=val_data,
+		sentiment_preds=sentiment_preds,
+		emotion_preds=emotion_preds,
+		irony_preds=irony_preds,
 	)
 
 	if args.calc_seq_len:
