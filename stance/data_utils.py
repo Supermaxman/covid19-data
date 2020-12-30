@@ -42,6 +42,7 @@ class StanceBatchCollator(object):
 		question_ids = []
 		sequences = []
 		scores = defaultdict(list)
+		other_ids = defaultdict(list)
 		for ex in examples:
 			ids.append(ex['id'])
 			if self.labeled:
@@ -49,7 +50,8 @@ class StanceBatchCollator(object):
 			question_ids.append(ex['question_id'])
 			sequences.append((ex['query'], ex['text']))
 			for score_name, score_values in ex['scores'].items():
-				scores[score_name].append(score_values)
+				scores[score_name + '_scores'].append(score_values)
+				other_ids[score_name + '_ids'].append([i for i in range(len(score_values))])
 
 		tokenizer_batch = self.tokenizer.batch_encode_plus(
 			batch_text_or_text_pairs=sequences,
@@ -72,6 +74,10 @@ class StanceBatchCollator(object):
 		for score_name, score_value in scores.items():
 			# [bsize, num_labels]
 			batch[score_name] = torch.tensor(score_value, dtype=torch.float)
+
+		for id_name, id_value in other_ids.items():
+			batch[id_name] = torch.tensor(id_value, dtype=torch.long)
+
 		return batch
 
 

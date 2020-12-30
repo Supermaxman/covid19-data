@@ -110,39 +110,33 @@ class CovidTwitterStanceModel(pl.LightningModule):
 
 		classifier_inputs = [cls_output]
 		if self.has_sentiment:
-			s_embeddings = self.sentiment_embeddings(
-				torch.tensor([i for i in range(len(self.sentiment_labels))], dtype=torch.long)
-			)
+			s_embeddings = self.sentiment_embeddings(batch['sentiment_ids'])
 			# [bsize, emb_size]
 			s_outputs = self.sentiment_pooling(
 				hidden_states=contextualized_embeddings,
 				queries=s_embeddings,
-				query_probs=batch['sentiment'],
+				query_probs=batch['sentiment_scores'],
 				attention_mask=attention_mask
 			)
 			classifier_inputs.append(s_outputs)
 		if self.has_emotion:
-			e_embeddings = self.emotion_embeddings(
-				torch.tensor([i for i in range(len(self.emotion_labels))], dtype=torch.long)
-			)
+			e_embeddings = self.emotion_embeddings(batch['emotion_ids'])
 			# [bsize, emb_size]
 			e_outputs = self.emotion_pooling(
 				hidden_states=contextualized_embeddings,
 				queries=e_embeddings,
-				query_probs=batch['emotion'],
+				query_probs=batch['emotion_scores'],
 				attention_mask=attention_mask
 			)
 			classifier_inputs.append(e_outputs)
 
 		if self.has_irony:
-			i_embeddings = self.irony_embeddings(
-				torch.tensor([i for i in range(len(self.irony_labels))], dtype=torch.long)
-			)
+			i_embeddings = self.irony_embeddings(batch['irony_ids'])
 			# [bsize, emb_size]
 			i_outputs = self.irony_pooling(
 				hidden_states=contextualized_embeddings,
 				queries=i_embeddings,
-				query_probs=batch['irony'],
+				query_probs=batch['irony_scores'],
 				attention_mask=attention_mask
 			)
 			classifier_inputs.append(i_outputs)
