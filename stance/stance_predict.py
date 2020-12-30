@@ -8,8 +8,8 @@ from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import QABert
-from data_utils import QADataset, QABatchCollator, QARetrievalPredictionDataset
+from model_utils import CovidTwitterStanceModel
+from data_utils import StanceDataset, StanceBatchCollator, StanceRetrievalPredictionDataset
 
 import torch
 
@@ -96,39 +96,60 @@ if __name__ == '__main__':
 		logging.info(f'Loaded {len(hera_data)} HERA tweets.')
 
 	sentiment_preds = None
+	sentiment_labels = None
 	if args.sentiment_path is not None:
+		sentiment_labels = {
+			'negative': 0,
+			'neutral': 1,
+			'positive': 2,
+		}
 		with open(args.sentiment_path, 'r') as f:
 			sentiment_preds = json.load(f)
 		logging.info(f'Loaded sentiment predictions.')
 
 	emotion_preds = None
+	emotion_labels = None
 	if args.emotion_path is not None:
+		emotion_labels = {
+			'anger': 0,
+			'joy': 1,
+			'optimism': 2,
+			'sadness': 3,
+		}
 		with open(args.emotion_path, 'r') as f:
 			emotion_preds = json.load(f)
 		logging.info(f'Loaded emotion predictions.')
 
 	irony_preds = None
+	irony_labels = None
 	if args.irony_path is not None:
+		irony_labels = {
+			'non_irony': 0,
+			'irony': 1
+		}
 		with open(args.irony_path, 'r') as f:
 			irony_preds = json.load(f)
 		logging.info(f'Loaded irony predictions.')
 
 	if args.mode == 'stance':
 		logging.info('Loading stance dataset...')
-		eval_dataset = QADataset(
+		eval_dataset = StanceDataset(
 			documents=eval_data,
 			hera_documents=hera_data,
 			keep_real=args.keep_real,
 			sentiment_preds=sentiment_preds,
 			emotion_preds=emotion_preds,
 			irony_preds=irony_preds,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
 			labeled=False
 		)
 	elif args.mode == 'retrieval':
 		logging.info('Loading retrieval dataset...')
 		with open(args.misconceptions_path) as f:
 			misconceptions = json.load(f)
-		eval_dataset = QARetrievalPredictionDataset(
+		eval_dataset = StanceRetrievalPredictionDataset(
 			eval_data,
 			misconceptions,
 			split['train']
@@ -143,7 +164,7 @@ if __name__ == '__main__':
 		batch_size=args.batch_size,
 		shuffle=False,
 		num_workers=num_workers,
-		collate_fn=QABatchCollator(
+		collate_fn=StanceBatchCollator(
 			tokenizer,
 			args.max_seq_len,
 			args.use_tpus,
@@ -155,7 +176,7 @@ if __name__ == '__main__':
 	updates_epoch = len(eval_dataset) // (args.batch_size * num_batches_per_step)
 	updates_total = updates_epoch * args.epochs
 	logging.info('Loading model...')
-	model = QABert(
+	model = CovidTwitterStanceModel(
 		pre_model_name=args.pre_model_name,
 		learning_rate=args.learning_rate,
 		lr_warmup=0.1,

@@ -1,4 +1,3 @@
-
 import json
 import os
 import json
@@ -27,8 +26,10 @@ def write_jsonl(data, path):
 			f.write(json_data + '\n')
 
 
-class QABatchCollator(object):
-	def __init__(self, tokenizer,  max_seq_len: int, force_max_seq_len: bool, labeled=True):
+class StanceBatchCollator(object):
+	def __init__(
+			self, tokenizer, max_seq_len: int, force_max_seq_len: bool,
+			labeled=True):
 		super().__init__()
 		self.tokenizer = tokenizer
 		self.max_seq_len = max_seq_len
@@ -40,12 +41,16 @@ class QABatchCollator(object):
 		labels = []
 		question_ids = []
 		sequences = []
+		scores = defaultdict(list)
 		for ex in examples:
 			ids.append(ex['id'])
 			if self.labeled:
 				labels.append(ex['label'])
 			question_ids.append(ex['question_id'])
 			sequences.append((ex['query'], ex['text']))
+			for score_name, score_values in ex['scores'].items():
+				scores[score_name].append(score_values)
+
 		tokenizer_batch = self.tokenizer.batch_encode_plus(
 			batch_text_or_text_pairs=sequences,
 			add_special_tokens=True,
@@ -64,6 +69,9 @@ class QABatchCollator(object):
 		if self.labeled:
 			batch['labels'] = torch.tensor(labels, dtype=torch.long)
 
+		for score_name, score_value in scores.items():
+			# [bsize, num_labels]
+			batch[score_name] = torch.tensor(score_value, dtype=torch.float)
 		return batch
 
 
@@ -109,11 +117,24 @@ def hera_label_to_id(source, label_name):
 			raise ValueError(f'Unknown label name: {label_name}')
 
 
-class QADataset(Dataset):
-	def __init__(self, documents=None, hera_documents=None,
-							 keep_real=False, sentiment_preds=None, emotion_preds=None, irony_preds=None, labeled=True):
+def format_predictions(preds, labels):
+	values = [None for _ in range(len(labels))]
+	for l_name, l_value in preds.items():
+		label_idx = labels[l_name]
+		values[label_idx] = l_value
+	return values
+
+
+class StanceDataset(Dataset):
+	def __init__(
+			self, documents=None, hera_documents=None,
+			keep_real=False,
+			sentiment_preds=None, emotion_preds=None, irony_preds=None,
+			sentiment_labels=None, emotion_labels=None, irony_labels=None,
+			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
+
 		if sentiment_preds is None:
 			sentiment_preds = {}
 		if emotion_preds is None:
@@ -151,13 +172,24 @@ class QADataset(Dataset):
 					m_label = None
 					if labeled:
 						m_label = label_text_to_id(m['label'])
+					tweet_id = doc['id_str']
 					ex = {
-						'id': doc['id_str'],
+						'id': tweet_id,
 						'text': doc['full_text'],
 						'question_id': m['misconception_id'],
 						'query': m['misconception_text'],
 						'label': m_label,
+						'scores': {}
 					}
+					if tweet_id in sentiment_preds:
+						ex['scores']['sentiment'] = format_predictions(sentiment_preds[tweet_id], sentiment_labels)
+
+					if tweet_id in emotion_preds:
+						ex['scores']['emotion'] = format_predictions(emotion_preds[tweet_id], emotion_labels)
+
+					if tweet_id in irony_preds:
+						ex['scores']['irony'] = format_predictions(irony_preds[tweet_id], irony_labels)
+
 					self.num_labels[m_label] += 1
 					self.examples.append(ex)
 
