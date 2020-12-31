@@ -43,6 +43,7 @@ done <<< "${GPU_MEMORY}"
 if [[ ${n} -eq ${NUM_GPUS_REQUESTED} ]]; then
     echo ${OUTPUTS}
 else
+    bash scripts/free_gpus.sh ${OUTPUTS}
     echo -1
 fi
 
