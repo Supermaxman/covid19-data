@@ -18,12 +18,12 @@ STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
 
 STANCE_NUM_GPUS=1
-TRAIN_STANCE=false
-RUN_STANCE=false
-EVAL_STANCE=false
+TRAIN_STANCE=true
+RUN_STANCE=true
+EVAL_STANCE=true
+
 
 echo "Starting experiment ${RUN_NAME}_${RUN_ID}"
-
 echo "Reserving ${STANCE_NUM_GPUS} GPU(s)..."
 STANCE_GPUS=`python gpu/request_gpus.py -r ${STANCE_NUM_GPUS}`
 if [[ ${STANCE_GPUS} -eq -1 ]]; then
@@ -45,7 +45,9 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
+          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
           --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
+          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
@@ -60,7 +62,9 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
+          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
           --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
+          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
