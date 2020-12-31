@@ -15,9 +15,7 @@ do
             if [[ ${j} -eq 0 ]]; then
                 if [[ ${gpu_mem} -lt ${MEMORY_THRESHOLD} ]]; then
                     v=GPU_RESERVED_${gpu_id}
-                    if [[ ${!v} = true ]]; then
-                        pass
-                    else
+                    if [[ ${!v} != true ]]; then
                         if [[ ${n} -gt 0 ]]; then
                             OUTPUTS=${OUTPUTS},
                         fi
