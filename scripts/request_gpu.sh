@@ -11,7 +11,7 @@ do
         OUTPUTS=${OUTPUTS},
     fi
     OUTPUTS=${OUTPUTS}${gpu_id}
-    declare -x GPU_RESERVED_${gpu_id}=false
+    declare -x GPU_RESERVED_${gpu_id}=true
     n=$((n+1))
     if [[ ${n} -eq ${NUM_GPUS_REQUESTED} ]]; then
         break
