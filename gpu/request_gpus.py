@@ -2,25 +2,26 @@
 import os
 import subprocess
 import argparse
+from filelock import FileLock
 
 
 def reserve_gpus(request_count, gpu_mem_threshold, res_path):
-	# TODO surround in user-level lock
-	available_gpus = []
-	for line in output:
-		gpu_id, gpu_mem_info = line.split(',')
-		gpu_mem = int(gpu_mem_info.split()[0])
-		if gpu_mem < gpu_mem_threshold:
-			gpu_res_path = os.path.join(res_path, gpu_id)
-			if not os.path.exists(gpu_res_path):
-				available_gpus.append(gpu_id)
+	with FileLock(os.path.join(res_path, '.lock')):
+		available_gpus = []
+		for line in output:
+			gpu_id, gpu_mem_info = line.split(',')
+			gpu_mem = int(gpu_mem_info.split()[0])
+			if gpu_mem < gpu_mem_threshold:
+				gpu_res_path = os.path.join(res_path, gpu_id)
+				if not os.path.exists(gpu_res_path):
+					available_gpus.append(gpu_id)
 
-	reserved_gpus = []
-	if len(available_gpus) >= request_count:
-		for gpu_id in available_gpus[:request_count]:
-			gpu_res_path = os.path.join(res_path, gpu_id)
-			open(gpu_res_path, 'w').close()
-			reserved_gpus.append(gpu_id)
+		reserved_gpus = []
+		if len(available_gpus) >= request_count:
+			for gpu_id in available_gpus[:request_count]:
+				gpu_res_path = os.path.join(res_path, gpu_id)
+				open(gpu_res_path, 'w').close()
+				reserved_gpus.append(gpu_id)
 	return reserved_gpus
 
 
