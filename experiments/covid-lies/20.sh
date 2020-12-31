@@ -10,7 +10,7 @@ NUM_STANCE_SPLITS=5
 
 # major hyper-parameters for system
 STANCE_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-STANCE_THRESHOLD=0.1
+STANCE_THRESHOLD=0.2
 
 STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
@@ -19,7 +19,7 @@ STANCE_EVAL_GPUS=1
 
 
 TRAIN_STANCE=false
-RUN_STANCE=true
+RUN_STANCE=false
 EVAL_STANCE=true
 
 DATASET_PATH=data

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # run names
-RUN_ID=23
+RUN_ID=24
 RUN_NAME=HLTRI_COVID_LIES_STANCE
 
 # collection
@@ -10,16 +10,16 @@ NUM_STANCE_SPLITS=5
 
 # major hyper-parameters for system
 STANCE_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-STANCE_THRESHOLD=0.2
+STANCE_THRESHOLD=0.1
 
 STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
-STANCE_TRAIN_GPUS=5
-STANCE_EVAL_GPUS=5
+STANCE_TRAIN_GPUS=1
+STANCE_EVAL_GPUS=1
 
 
 TRAIN_STANCE=false
-RUN_STANCE=false
+RUN_STANCE=true
 EVAL_STANCE=true
 
 DATASET_PATH=data
@@ -33,9 +33,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
           --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
@@ -50,9 +48,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
           --split_path ${DATASET_PATH}/split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
           --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
