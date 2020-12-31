@@ -40,7 +40,8 @@ if __name__ == '__main__':
 	res_path = os.path.expanduser(args.res_path)
 	if not os.path.exists(res_path):
 		os.mkdir(res_path)
-
+	if args.request_count == 0:
+		print('', end='')
 	gpu_ids = reserve_gpus(
 		request_count=args.request_count,
 		gpu_mem_threshold=args.gpu_mem_threshold,
