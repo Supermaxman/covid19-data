@@ -1,44 +1,22 @@
 #!/usr/bin/env bash
 
-MEMORY_THRESHOLD=200
 NUM_GPUS_REQUESTED=$1
 
-GPU_MEMORY=`nvidia-smi --query-gpu=index,memory.used --format=csv`
-i=0
+AVAILABLE_GPUS=`bash scripts/check_gpus.sh`
 n=0
 OUTPUTS=
-while IFS=, read -r gpu_id line2
+IFS=,; for gpu_id in ${AVAILABLE_GPUS};
 do
-    if [[ ${i} -gt 0 ]]; then
-        j=0
-        for gpu_mem in ${line2}
-        do
-            if [[ ${j} -eq 0 ]]; then
-                if [[ ${gpu_mem} -lt ${MEMORY_THRESHOLD} ]]; then
-                    v=GPU_RESERVED_${gpu_id}
-                    if [[ ${!v} = true ]]; then
-                        echo RESERVED
-                    else
-                        echo ${gpu_id}
-                        if [[ ${n} -gt 0 ]]; then
-                            OUTPUTS=${OUTPUTS},
-                        fi
-                        OUTPUTS=${OUTPUTS}${gpu_id}
-                        declare -x GPU_RESERVED_${gpu_id}=true
-                        n=$((n+1))
-                    fi
-
-                fi
-            fi
-            j=$((j+1))
-        done
+    if [[ ${n} -gt 0 ]]; then
+        OUTPUTS=${OUTPUTS},
     fi
-    i=$((i+1))
+    OUTPUTS=${OUTPUTS}${gpu_id}
+    declare -x GPU_RESERVED_${gpu_id}=false
+    n=$((n+1))
     if [[ ${n} -eq ${NUM_GPUS_REQUESTED} ]]; then
         break
     fi
-done <<< "${GPU_MEMORY}"
-
+done
 
 if [[ ${n} -eq ${NUM_GPUS_REQUESTED} ]]; then
     echo ${OUTPUTS}
