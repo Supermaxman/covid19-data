@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
 from model_utils import CovidTwitterStanceModel
-from data_utils import StanceDataset, StanceBatchCollator, StanceRetrievalPredictionDataset
+from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset
 
 import torch
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 		logging.info('Loading retrieval dataset...')
 		with open(args.misconceptions_path) as f:
 			misconceptions = json.load(f)
-		eval_dataset = StanceRetrievalPredictionDataset(
+		eval_dataset = QARetrievalPredictionDataset(
 			eval_data,
 			misconceptions,
 			split['train']
