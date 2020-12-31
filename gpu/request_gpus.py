@@ -42,14 +42,15 @@ if __name__ == '__main__':
 		os.mkdir(res_path)
 	if args.request_count == 0:
 		print('', end='')
-	gpu_ids = reserve_gpus(
-		request_count=args.request_count,
-		gpu_mem_threshold=args.gpu_mem_threshold,
-		res_path=res_path,
-	)
-
-	if len(gpu_ids) > 0:
-		print(','.join(gpu_ids), end='')
 	else:
-		print('-1', end='')
+		gpu_ids = reserve_gpus(
+			request_count=args.request_count,
+			gpu_mem_threshold=args.gpu_mem_threshold,
+			res_path=res_path,
+		)
+
+		if len(gpu_ids) > 0:
+			print(','.join(gpu_ids), end='')
+		else:
+			print('-1', end='')
 
