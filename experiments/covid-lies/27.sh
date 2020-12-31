@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
+filename=$(basename -- "$0")
 # run names
-RUN_ID=${0::-3}
+RUN_ID=${filename::-3}
 RUN_NAME=HLTRI_COVID_LIES_STANCE
 
 # collection
@@ -24,7 +25,7 @@ EVAL_STANCE=false
 echo "Starting experiment ${RUN_NAME}_${RUN_ID}"
 
 echo "Reserving ${STANCE_NUM_GPUS} GPUs..."
-STANCE_GPUS=`python gpu/request_gpus -r ${STANCE_NUM_GPUS}`
+STANCE_GPUS=`python gpu/request_gpus.py -r ${STANCE_NUM_GPUS}`
 if [[ ${STANCE_GPUS} -eq -1 ]]; then
     echo "Unable to reserve ${STANCE_NUM_GPUS} GPUs, exiting."
     exit -1
