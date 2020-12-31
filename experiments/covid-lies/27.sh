@@ -16,7 +16,7 @@ STANCE_THRESHOLD=0.1
 
 STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
-STANCE_NUM_GPUS=1
+STANCE_NUM_GPUS=2
 
 TRAIN_STANCE=false
 RUN_STANCE=false
@@ -24,10 +24,10 @@ EVAL_STANCE=false
 
 echo "Starting experiment ${RUN_NAME}_${RUN_ID}"
 
-echo "Reserving ${STANCE_NUM_GPUS} GPUs..."
+echo "Reserving ${STANCE_NUM_GPUS} GPU(s)..."
 STANCE_GPUS=`python gpu/request_gpus.py -r ${STANCE_NUM_GPUS}`
 if [[ ${STANCE_GPUS} -eq -1 ]]; then
-    echo "Unable to reserve ${STANCE_NUM_GPUS} GPUs, exiting."
+    echo "Unable to reserve ${STANCE_NUM_GPUS} GPU(s), exiting."
     exit -1
 fi
 echo "Reserved ${STANCE_NUM_GPUS} GPUs: ${STANCE_GPUS}"
