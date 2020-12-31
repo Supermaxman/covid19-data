@@ -21,7 +21,15 @@ TRAIN_STANCE=false
 RUN_STANCE=false
 EVAL_STANCE=false
 
+echo "Starting experiment ${RUN_NAME}_${RUN_ID}"
+
+echo "Reserving ${STANCE_NUM_GPUS} GPUs..."
 STANCE_GPUS=`python gpu/request_gpus -r ${STANCE_NUM_GPUS}`
+if [[ ${STANCE_GPUS} -eq -1 ]]; then
+    echo "Unable to reserve ${STANCE_NUM_GPUS} GPUs, exiting."
+    exit -1
+fi
+echo "Reserved ${STANCE_NUM_GPUS} GPUs: ${STANCE_GPUS}"
 STANCE_TRAIN_GPUS=${STANCE_GPUS}
 STANCE_EVAL_GPUS=${STANCE_GPUS}
 
