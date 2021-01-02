@@ -46,10 +46,10 @@ class GraphConvolution(Module):
 			nn.init.constant_(self.bias.data, 0.0)
 
 	def forward(self, inputs, adj):
-		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size]
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		# support = torch.mm(inputs, self.weight)
 		support = torch.matmul(inputs, self.weight)
-		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size]
+		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size] -> [bsize, seq_len, hidden_size]
 		# output = torch.mm(adj, support)
 		output = torch.matmul(adj, support)
 		if self.bias is not None:
@@ -94,12 +94,13 @@ class GraphAttention(nn.Module):
 		f_1 = torch.matmul(h, self.a1)
 		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		f_2 = torch.matmul(h, self.a2)
-		#
+		# [bsize, seq_len, hidden_size] + [bsize, hidden_size, seq_len] ->
+		# e = self.leakyrelu(f_1 + f_2.transpose(0, 1))
 		e = self.leakyrelu(f_1 + f_2.transpose(-2, -1))
 
 		zero_vec = -9e15 * torch.ones_like(e)
 		attention = torch.where(adj > 0, e, zero_vec)
-		attention = F.softmax(attention, dim=1)
+		attention = F.softmax(attention, dim=-1)
 		attention = F.dropout(attention, self.dropout, training=self.training)
 		h_prime = torch.matmul(attention, h)
 

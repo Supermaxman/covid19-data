@@ -349,7 +349,7 @@ class CovidTwitterStanceModel(pl.LightningModule):
 
 class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 	def __init__(self, freeze_lm, gcn_size, gcn_type, graph_names, *args, **kwargs):
-		super().__init__(classifier_feature_sizes=gcn_size * len(self.graph_names), *args, **kwargs)
+		super().__init__(classifier_feature_sizes=gcn_size * len(graph_names), *args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
 		self.gcn_projs = nn.ModuleDict(
