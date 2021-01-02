@@ -18,7 +18,8 @@ def reserve_gpus(request_count, gpu_mem_threshold, res_path):
 
 		reserved_gpus = []
 		if len(available_gpus) >= request_count:
-			for gpu_id in available_gpus[:request_count]:
+			# reversed to allocate less used gpus on gpu cluster, avoid annoying others
+			for gpu_id in list(reversed(available_gpus))[:request_count]:
 				gpu_res_path = os.path.join(res_path, gpu_id)
 				open(gpu_res_path, 'w').close()
 				reserved_gpus.append(gpu_id)

@@ -62,9 +62,9 @@ class StanceBatchCollator(object):
 			ex_input_ids = ex['input_ids'][:self.max_seq_len]
 			ex_attention_mask = ex['attention_mask'][:self.max_seq_len]
 			ex_token_type_ids = ex['token_type_ids'][:self.max_seq_len]
-			input_ids[ex_idx, :len(ex_input_ids)] = ex_input_ids
-			attention_mask[ex_idx, :len(ex_attention_mask)] = ex_attention_mask
-			token_type_ids[ex_idx, :len(ex_token_type_ids)] = ex_token_type_ids
+			input_ids[ex_idx, :len(ex_input_ids)] = torch.tensor(ex_input_ids, dtype=torch.long)
+			attention_mask[ex_idx, :len(ex_attention_mask)] = torch.tensor(ex_attention_mask, dtype=torch.long)
+			token_type_ids[ex_idx, :len(ex_token_type_ids)] = torch.tensor(ex_token_type_ids, dtype=torch.long)
 
 			for edge_name, edge_values in ex['edges'].items():
 				# truncation to max_seq_len, still need to pad
@@ -72,7 +72,10 @@ class StanceBatchCollator(object):
 				batch_edge_name = edge_name + '_edges'
 				if batch_edge_name not in edges:
 					edges[batch_edge_name] = torch.zeros([batch_size, pad_seq_len, pad_seq_len], dtype=torch.float)
-				edges[batch_edge_name][ex_idx, :edge_values.shape[0], :edge_values.shape[1]] = edge_values
+				edges[batch_edge_name][ex_idx, :edge_values.shape[0], :edge_values.shape[1]] = torch.tensor(
+					edge_values,
+					dtype=torch.float
+				)
 
 			for score_name, score_values in ex['scores'].items():
 				scores[score_name + '_scores'].append(score_values)
