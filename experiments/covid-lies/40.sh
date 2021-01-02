@@ -66,11 +66,8 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --gcn_type transformer \
-          --gcn_size 100 \
-          --graph_names semantic,emotion,lexical \
-          --model_type lm-gcn \
-          --num_semantic_hops 3 \
+          --model_type lm \
+          --num_semantic_hops 1 \
           --num_emotion_hops 1 \
           --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
           --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
