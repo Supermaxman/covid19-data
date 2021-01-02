@@ -6,6 +6,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 import random
 from collections import defaultdict
+import senticnet5
+import numpy as np
 
 
 def read_jsonl(path):
@@ -40,33 +42,48 @@ class StanceBatchCollator(object):
 		ids = []
 		labels = []
 		question_ids = []
-		sequences = []
 		scores = defaultdict(list)
 		other_ids = defaultdict(list)
+		batch_size = len(examples)
+		pad_seq_len = 0
 		for ex in examples:
+			pad_seq_len = max(pad_seq_len, min(len(ex['input_ids']), self.max_seq_len))
+
+		input_ids = torch.zeros([batch_size, pad_seq_len], dtype=torch.long)
+		attention_mask = torch.zeros([batch_size, pad_seq_len], dtype=torch.long)
+		token_type_ids = torch.zeros([batch_size, pad_seq_len], dtype=torch.long)
+		edges = {}
+
+		for ex_idx, ex in enumerate(examples):
 			ids.append(ex['id'])
 			if self.labeled:
 				labels.append(ex['label'])
 			question_ids.append(ex['question_id'])
-			sequences.append((ex['query'], ex['text']))
+			ex_input_ids = ex['input_ids'][:self.max_seq_len]
+			ex_attention_mask = ex['attention_mask'][:self.max_seq_len]
+			ex_token_type_ids = ex['token_type_ids'][:self.max_seq_len]
+			input_ids[ex_idx, :len(ex_input_ids)] = ex_input_ids
+			attention_mask[ex_idx, :len(ex_attention_mask)] = ex_attention_mask
+			token_type_ids[ex_idx, :len(ex_token_type_ids)] = ex_token_type_ids
+
+			for edge_name, edge_values in ex['edges'].items():
+				# truncation to max_seq_len, still need to pad
+				edge_values = edge_values[:self.max_seq_len, :self.max_seq_len]
+				batch_edge_name = edge_name + '_edges'
+				if batch_edge_name not in edges:
+					edges[batch_edge_name] = torch.zeros([batch_size, pad_seq_len, pad_seq_len], dtype=torch.float)
+				edges[batch_edge_name][ex_idx, :edge_values.shape[0], :edge_values.shape[1]] = edge_values
+
 			for score_name, score_values in ex['scores'].items():
 				scores[score_name + '_scores'].append(score_values)
 				other_ids[score_name + '_ids'].append([i for i in range(len(score_values))])
 
-		tokenizer_batch = self.tokenizer.batch_encode_plus(
-			batch_text_or_text_pairs=sequences,
-			add_special_tokens=True,
-			padding='max_length' if self.force_max_seq_len else 'longest',
-			return_tensors='pt',
-			truncation='only_second',
-			max_length=self.max_seq_len
-		)
 		batch = {
 			'id': ids,
 			'question_id': question_ids,
-			'input_ids': tokenizer_batch['input_ids'],
-			'attention_mask': tokenizer_batch['attention_mask'],
-			'token_type_ids': tokenizer_batch['token_type_ids'],
+			'input_ids': input_ids,
+			'attention_mask': attention_mask,
+			'token_type_ids': token_type_ids,
 		}
 		if self.labeled:
 			batch['labels'] = torch.tensor(labels, dtype=torch.long)
@@ -77,6 +94,9 @@ class StanceBatchCollator(object):
 
 		for id_name, id_value in other_ids.items():
 			batch[id_name] = torch.tensor(id_value, dtype=torch.long)
+
+		for edge_name, edge_value in edges.items():
+			batch[edge_name] = edge_value
 
 		return batch
 
@@ -131,22 +151,201 @@ def format_predictions(preds, labels):
 	return values
 
 
+def create_token_features(token):
+	pass
+
+
+def sentic_expand(sentic_edges, expand_list):
+	new_edges = set(sentic_edges)
+	for edge in sentic_edges:
+		edge_info = senticnet5.senticnet[edge]
+		for i in expand_list:
+			new_edges.add(edge_info[i])
+	return new_edges
+
+
+def flatten(l):
+	return [item for sublist in l for item in sublist]
+
+
 class StanceDataset(Dataset):
 	def __init__(
 			self, documents=None, hera_documents=None,
 			keep_real=False,
 			sentiment_preds=None, emotion_preds=None, irony_preds=None,
 			sentiment_labels=None, emotion_labels=None, irony_labels=None,
+			tokenizer=None,
+			token_features=None, misconception_token_features=None,
+			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
-
+		# TODO follow https://github.com/tkipf/pygcn/blob/master/pygcn/utils.py
+		# TODO for graph adjacency features
 		if sentiment_preds is None:
 			sentiment_preds = {}
 		if emotion_preds is None:
 			emotion_preds = {}
 		if irony_preds is None:
 			irony_preds = {}
+		if token_features is None:
+			token_features = {}
+			emotion_nodes = defaultdict(set)
+			for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
+				for emotion in [value[4], value[5]]:
+					emotion_nodes[emotion].add(key)
+
+		if documents is not None:
+			for doc in tqdm(documents, desc='loading documents...'):
+				for m in doc['misconceptions']:
+					m_label = None
+					if labeled:
+						m_label = label_text_to_id(m['label'])
+					tweet_id = doc['id_str']
+					m_id = m['misconception_id']
+					ex = {
+						'id': tweet_id,
+						'text': doc['full_text'],
+						'question_id': m_id,
+						'query': m['misconception_text'],
+						'label': m_label,
+						'scores': {},
+						'edges': {},
+					}
+					if tweet_id in sentiment_preds:
+						ex['scores']['sentiment'] = format_predictions(sentiment_preds[tweet_id], sentiment_labels)
+
+					if tweet_id in emotion_preds:
+						ex['scores']['emotion'] = format_predictions(emotion_preds[tweet_id], emotion_labels)
+
+					if tweet_id in irony_preds:
+						ex['scores']['irony'] = format_predictions(irony_preds[tweet_id], irony_labels)
+
+					if tweet_id in token_features:
+						input_ids = []
+						token_type_ids = []
+						attention_mask = []
+						input_id_texts = []
+						input_idx_map = defaultdict(list)
+						text_map = {}
+						current_token_type_id = 0
+						max_input_idx = 0
+						semantic_edges = {}
+						emotion_edges = {}
+						lexical_edges = {}
+						root_text = None
+						tokens = ['[CLS]'] + misconception_token_features[m_id] + ['[SEP]'] + token_features[tweet_id] + ['[SEP]']
+						for token in tokens:
+							if isinstance(token, dict):
+								text = token['text']
+								# TODO add as features
+								pos = token['pos']
+								dep = token['dep']
+								head = token['head']
+								# 0 'pleasantness_value',
+								# 1 'attention_value',
+								# 2 'sensitivity_value',
+								# 3 'aptitude_value',
+								# 4 'primary_mood',
+								# 5 'secondary_mood',
+								# 6 'polarity_label',
+								# 7 'polarity_value',
+								# 8 'semantics1',
+								# 9 'semantics2',
+								# 10 'semantics3',
+								# 11 'semantics4',
+								# 12 'semantics5'
+								if dep == 'ROOT':
+									root_text = text
+								semantic_edges[text] = set(token['sentic']['semantics'])
+								for i in range(num_semantic_hops-1):
+									semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
+								emotion_edges[text] = set()
+								for emotion in [token['sentic']['primary_mood'], token['sentic']['secondary_mood']]:
+									emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+
+								for i in range(num_emotion_hops - 1):
+									new_emotions = sentic_expand(emotion_edges[text], [4, 5])
+									for emotion in new_emotions:
+										emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+
+								lexical_edges[text] = {head}
+
+								token_tokens = tokenizer(text=text, add_special_tokens=False)
+								for input_id in token_tokens['input_ids']:
+									input_ids.append(input_id)
+									token_type_ids.append(current_token_type_id)
+									attention_mask.append(1)
+									input_id_texts.append(text)
+									input_idx_map[text].append(max_input_idx)
+									text_map[max_input_idx] = text
+									max_input_idx += 1
+							else:
+								if token == '[CLS]' or token == '[SEP]':
+									token_tokens = tokenizer(text=token, add_special_tokens=False)
+									input_ids.append(token_tokens['input_ids'][0])
+									token_type_ids.append(current_token_type_id)
+									attention_mask.append(1)
+									input_id_texts.append(token)
+									input_idx_map[token].append(max_input_idx)
+									text_map[max_input_idx] = token
+									max_input_idx += 1
+									if token == '[SEP]':
+										current_token_type_id += 1
+
+						semantic_edges['[CLS]'] = {}
+						semantic_edges['[SEP]'] = {}
+						emotion_edges['[CLS]'] = {}
+						emotion_edges['[SEP]'] = {}
+						lexical_edges['[CLS]'] = {root_text}
+						lexical_edges['[SEP]'] = {root_text}
+
+						# TODO implement num_lexical_hops
+						# TODO determine if CLS and SEP should be attached
+
+						semantic_adj = np.eye(max_input_idx, dtype=np.float32)
+						emotion_adj = np.eye(max_input_idx, dtype=np.float32)
+						lexical_adj = np.eye(max_input_idx, dtype=np.float32)
+						for input_idx in range(max_input_idx):
+							input_idx_text = text_map[input_idx]
+							i_semantic_edges = set(flatten([input_idx_map[e_txt] for e_txt in semantic_edges[input_idx_text]]))
+							for edge_idx in i_semantic_edges:
+								semantic_adj[input_idx, edge_idx] = 1.0
+								semantic_adj[edge_idx, input_idx] = 1.0
+
+							i_emotion_edges = set(flatten([input_idx_map[e_txt] for e_txt in emotion_edges[input_idx_text]]))
+							for edge_idx in i_emotion_edges:
+								emotion_adj[input_idx, edge_idx] = 1.0
+								emotion_adj[edge_idx, input_idx] = 1.0
+
+							i_lexical_edges = set(flatten([input_idx_map[e_txt] for e_txt in lexical_edges[input_idx_text]]))
+							for edge_idx in i_lexical_edges:
+								lexical_adj[input_idx, edge_idx] = 1.0
+								lexical_adj[edge_idx, input_idx] = 1.0
+
+						ex['edges']['semantic'] = semantic_adj
+						ex['edges']['emotion'] = emotion_adj
+						ex['edges']['lexical'] = lexical_adj
+						ex['input_ids'] = input_ids
+						ex['token_type_ids'] = token_type_ids
+						ex['attention_mask'] = attention_mask
+
+					else:
+						raise NotImplementedError()
+						# tweet_tokens = tokenizer(
+						# 	text=ex['query'],
+						# 	text_pair=ex['text'],
+						# 	add_special_tokens=True,
+						# 	padding=False,
+						# 	return_tensors='pt',
+						# 	truncation='only_second',
+						# 	max_length=max_seq_len
+						# )
+						# ex['tokens'] = tweet_tokens
+
+					self.num_labels[m_label] += 1
+					self.examples.append(ex)
+
 		if hera_documents is not None:
 			for doc in hera_documents:
 				m = doc['misinformation']
@@ -172,33 +371,6 @@ class StanceDataset(Dataset):
 				}
 				self.num_labels[m_label] += 1
 				self.examples.append(ex)
-		if documents is not None:
-			for doc in documents:
-				for m in doc['misconceptions']:
-					m_label = None
-					if labeled:
-						m_label = label_text_to_id(m['label'])
-					tweet_id = doc['id_str']
-					ex = {
-						'id': tweet_id,
-						'text': doc['full_text'],
-						'question_id': m['misconception_id'],
-						'query': m['misconception_text'],
-						'label': m_label,
-						'scores': {}
-					}
-					if tweet_id in sentiment_preds:
-						ex['scores']['sentiment'] = format_predictions(sentiment_preds[tweet_id], sentiment_labels)
-
-					if tweet_id in emotion_preds:
-						ex['scores']['emotion'] = format_predictions(emotion_preds[tweet_id], emotion_labels)
-
-					if tweet_id in irony_preds:
-						ex['scores']['irony'] = format_predictions(irony_preds[tweet_id], irony_labels)
-
-					self.num_labels[m_label] += 1
-					self.examples.append(ex)
-
 		self.num_examples = len(self.examples)
 		random.shuffle(self.examples)
 

@@ -8,7 +8,7 @@ from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import CovidTwitterStanceModel
+from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel
 from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset
 
 import torch
@@ -38,6 +38,15 @@ if __name__ == '__main__':
 	parser.add_argument('-sp', '--sentiment_path', default=None)
 	parser.add_argument('-ep', '--emotion_path', default=None)
 	parser.add_argument('-ip', '--irony_path', default=None)
+	parser.add_argument('-tp', '--token_feature_path', default=None)
+	parser.add_argument('-mtp', '--misconception_token_feature_path', default=None)
+	parser.add_argument('-hs', '--num_semantic_hops', default=3, type=int)
+	parser.add_argument('-he', '--num_emotion_hops', default=1, type=int)
+	parser.add_argument('-hl', '--num_lexical_hops', default=1, type=int)
+	parser.add_argument('-mt', '--model_type', default='lm')
+	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
+	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
+	parser.add_argument('-gt', '--gcn_type', default='convolution')
 
 	args = parser.parse_args()
 
@@ -131,18 +140,31 @@ if __name__ == '__main__':
 			irony_preds = json.load(f)
 		logging.info(f'Loaded irony predictions.')
 
+	token_features = None
+	misconception_token_features = None
+	if args.token_feature_path is not None:
+		with open(args.token_feature_path, 'r') as f:
+			token_features = json.load(f)
+		with open(args.misconception_token_feature_path, 'r') as f:
+			misconception_token_features = json.load(f)
+		logging.info(f'Loaded token features.')
+
 	if args.mode == 'stance':
 		logging.info('Loading stance dataset...')
 		eval_dataset = StanceDataset(
 			documents=eval_data,
-			hera_documents=hera_data,
-			keep_real=args.keep_real,
 			sentiment_preds=sentiment_preds,
 			emotion_preds=emotion_preds,
 			irony_preds=irony_preds,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			tokenizer=tokenizer,
+			token_features=token_features,
+			misconception_token_features=misconception_token_features,
+			num_semantic_hops=args.num_semantic_hops,
+			num_emotion_hops=args.num_emotion_hops,
+			num_lexical_hops=args.num_lexical_hops,
 			labeled=False
 		)
 	elif args.mode == 'retrieval':
@@ -176,19 +198,40 @@ if __name__ == '__main__':
 	updates_epoch = len(eval_dataset) // (args.batch_size * num_batches_per_step)
 	updates_total = updates_epoch * args.epochs
 	logging.info('Loading model...')
-	model = CovidTwitterStanceModel(
-		pre_model_name=args.pre_model_name,
-		learning_rate=args.learning_rate,
-		lr_warmup=0.1,
-		updates_total=updates_total,
-		weight_decay=0.0,
-		sentiment_labels=sentiment_labels,
-		emotion_labels=emotion_labels,
-		irony_labels=irony_labels,
-		torch_cache_dir=args.torch_cache_dir,
-		predict_mode=True,
-		predict_path=args.output_path
-	)
+	model_type = args.model_type.lower()
+	if model_type == 'lm':
+		model = CovidTwitterStanceModel(
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
+	elif model_type == 'lm-gcn':
+		model = CovidTwitterGCNStanceModel(
+			freeze_lm=args.freeze_lm,
+			gcn_size=args.gcn_size,
+			gcn_type=args.gcn_type,
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
+	else:
+		raise ValueError(f'Unknown model type: {model_type}')
 
 	if args.load_trained_model:
 		logging.warning(f'Loading weights from trained checkpoint: {checkpoint_path}...')

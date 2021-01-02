@@ -11,6 +11,7 @@
       <w>preds</w>
       <w>pretrained</w>
       <w>probs</w>
+      <w>stdv</w>
       <w>warmup</w>
     </words>
   </dictionary>

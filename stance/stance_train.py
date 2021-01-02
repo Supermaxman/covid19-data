@@ -8,7 +8,7 @@ from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import CovidTwitterStanceModel, get_device_id
+from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get_device_id
 from data_utils import StanceDataset, StanceBatchCollator
 
 import torch
@@ -26,7 +26,6 @@ if __name__ == '__main__':
 	parser.add_argument('-eo', '--epochs', default=10, type=int)
 	parser.add_argument('-cd', '--torch_cache_dir', default=None)
 	parser.add_argument('-tpu', '--use_tpus', default=False, action='store_true')
-	parser.add_argument('-csl', '--calc_seq_len', default=False, action='store_true')
 	parser.add_argument('-lr', '--learning_rate', default=5e-6, type=float)
 	parser.add_argument('-gpu', '--gpus', default='0')
 	parser.add_argument('-hp', '--hera_path', default=None)
@@ -36,6 +35,15 @@ if __name__ == '__main__':
 	parser.add_argument('-sp', '--sentiment_path', default=None)
 	parser.add_argument('-ep', '--emotion_path', default=None)
 	parser.add_argument('-ip', '--irony_path', default=None)
+	parser.add_argument('-tp', '--token_feature_path', default=None)
+	parser.add_argument('-mtp', '--misconception_token_feature_path', default=None)
+	parser.add_argument('-hs', '--num_semantic_hops', default=3, type=int)
+	parser.add_argument('-he', '--num_emotion_hops', default=1, type=int)
+	parser.add_argument('-hl', '--num_lexical_hops', default=1, type=int)
+	parser.add_argument('-mt', '--model_type', default='lm')
+	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
+	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
+	parser.add_argument('-gt', '--gcn_type', default='convolution')
 
 	args = parser.parse_args()
 
@@ -126,6 +134,15 @@ if __name__ == '__main__':
 			irony_preds = json.load(f)
 		logging.info(f'Loaded irony predictions.')
 
+	token_features = None
+	misconception_token_features = None
+	if args.token_feature_path is not None:
+		with open(args.token_feature_path, 'r') as f:
+			token_features = json.load(f)
+		with open(args.misconception_token_feature_path, 'r') as f:
+			misconception_token_features = json.load(f)
+		logging.info(f'Loaded token features.')
+
 	train_dataset = StanceDataset(
 		documents=train_data,
 		hera_documents=hera_data,
@@ -136,6 +153,12 @@ if __name__ == '__main__':
 		sentiment_labels=sentiment_labels,
 		emotion_labels=emotion_labels,
 		irony_labels=irony_labels,
+		tokenizer=tokenizer,
+		token_features=token_features,
+		misconception_token_features=misconception_token_features,
+		num_semantic_hops=args.num_semantic_hops,
+		num_emotion_hops=args.num_emotion_hops,
+		num_lexical_hops=args.num_lexical_hops,
 	)
 
 	val_dataset = StanceDataset(
@@ -146,33 +169,13 @@ if __name__ == '__main__':
 		sentiment_labels=sentiment_labels,
 		emotion_labels=emotion_labels,
 		irony_labels=irony_labels,
+		tokenizer=tokenizer,
+		token_features=token_features,
+		misconception_token_features=misconception_token_features,
+		num_semantic_hops=args.num_semantic_hops,
+		num_emotion_hops=args.num_emotion_hops,
+		num_lexical_hops=args.num_lexical_hops,
 	)
-
-	if args.calc_seq_len:
-		import numpy as np
-		from tqdm import tqdm
-
-		data_loader = DataLoader(
-			val_dataset,
-			batch_size=1,
-			shuffle=True,
-			num_workers=1,
-			collate_fn=StanceBatchCollator(
-				tokenizer,
-				args.max_seq_len,
-				False
-			)
-		)
-		logging.info('Calculating seq len stats...')
-		seq_lens = []
-		for idx, batch in tqdm(enumerate(data_loader)):
-			seq_len = batch['input_ids'].shape[-1]
-			seq_lens.append(seq_len)
-			if idx > 1000:
-				break
-		p = np.percentile(seq_lens, 95)
-		logging.info(f'95-percentile: {p}')
-		exit()
 
 	logging.info(f'train={len(train_dataset)}, val={len(val_dataset)}')
 	logging.info(f'train_labels={train_dataset.num_labels}')
@@ -204,18 +207,38 @@ if __name__ == '__main__':
 	updates_epoch = len(train_dataset) // (args.batch_size * num_batches_per_step)
 	updates_total = updates_epoch * args.epochs
 	logging.info('Loading model...')
-	model = CovidTwitterStanceModel(
-		pre_model_name=args.pre_model_name,
-		learning_rate=args.learning_rate,
-		lr_warmup=0.1,
-		updates_total=updates_total,
-		weight_decay=0.0,
-		sentiment_labels=sentiment_labels,
-		emotion_labels=emotion_labels,
-		irony_labels=irony_labels,
-		torch_cache_dir=args.torch_cache_dir,
-		load_pretrained=args.load_checkpoint is not None
-	)
+	model_type = args.model_type.lower()
+	if model_type == 'lm':
+		model = CovidTwitterStanceModel(
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			torch_cache_dir=args.torch_cache_dir,
+			load_pretrained=args.load_checkpoint is not None
+		)
+	elif model_type == 'lm-gcn':
+		model = CovidTwitterGCNStanceModel(
+			freeze_lm=args.freeze_lm,
+			gcn_size=args.gcn_size,
+			gcn_type=args.gcn_type,
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			torch_cache_dir=args.torch_cache_dir,
+			load_pretrained=args.load_checkpoint is not None
+		)
+	else:
+		raise ValueError(f'Unknown model type: {model_type}')
 	tokenizer.save_pretrained(save_directory)
 	model.config.save_pretrained(save_directory)
 	if args.load_checkpoint is not None:
