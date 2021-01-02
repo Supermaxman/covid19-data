@@ -78,11 +78,11 @@ class GraphAttention(nn.Module):
 			requires_grad=True)
 		self.a1 = nn.Parameter(
 			nn.init.xavier_normal_(
-				torch.Tensor(in_features, out_features), gain=np.sqrt(2.0)),
+				torch.Tensor(out_features, 1), gain=np.sqrt(2.0)),
 			requires_grad=True)
 		self.a2 = nn.Parameter(
 			nn.init.xavier_normal_(
-				torch.Tensor(in_features, out_features), gain=np.sqrt(2.0)),
+				torch.Tensor(out_features, 1), gain=np.sqrt(2.0)),
 			requires_grad=True)
 
 		self.leakyrelu = nn.LeakyReLU(self.alpha)
@@ -90,16 +90,15 @@ class GraphAttention(nn.Module):
 	def forward(self, inputs, adj):
 		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		h = torch.matmul(inputs, self.W)
-		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		# [bsize, seq_len, hidden_size] x [hidden_size, 1] -> [bsize, seq_len, 1]
 		f_1 = torch.matmul(h, self.a1)
-		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, 1]
 		f_2 = torch.matmul(h, self.a2)
-		# [bsize, seq_len, hidden_size] + [bsize, hidden_size, seq_len] -> [bsize, seq_len, seq_len]
-		# e = self.leakyrelu(f_1 + f_2.transpose(0, 1))
+		# [bsize, seq_len, 1] + [bsize, 1, seq_len] -> [bsize, seq_len, seq_len]
 		e = self.leakyrelu(f_1 + f_2.transpose(-2, -1))
-
+		# [bsize, seq_len, seq_len]
 		zero_vec = -9e15 * torch.ones_like(e)
-		# [bsize, seq_len, seq_len] on
+		# [bsize, seq_len, seq_len]
 		attention = torch.where(adj > 0, e, zero_vec)
 		attention = F.softmax(attention, dim=-1)
 		attention = F.dropout(attention, self.dropout, training=self.training)

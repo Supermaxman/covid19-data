@@ -154,10 +154,6 @@ def format_predictions(preds, labels):
 	return values
 
 
-def create_token_features(token):
-	pass
-
-
 def sentic_expand(sentic_edges, expand_list):
 	new_edges = set(sentic_edges)
 	for edge in sentic_edges:
@@ -349,6 +345,29 @@ class StanceDataset(Dataset):
 						ex['input_ids'] = input_ids
 						ex['token_type_ids'] = token_type_ids
 						ex['attention_mask'] = attention_mask
+
+						print('text_map')
+						print(text_map)
+						input()
+						print('input_ids')
+						print(input_ids)
+						input()
+						print('token_type_ids')
+						print(token_type_ids)
+						input()
+						print('attention_mask')
+						print(attention_mask)
+						input()
+						print('semantic_edges')
+						print(semantic_adj)
+						input()
+						print('emotion_edges')
+						print(emotion_adj)
+						input()
+						print('lexical_edges')
+						print(lexical_adj)
+						input()
+						print()
 
 					else:
 						raise NotImplementedError()
