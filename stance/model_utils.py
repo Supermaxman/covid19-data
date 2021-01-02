@@ -43,8 +43,12 @@ class CovidTwitterStanceModel(pl.LightningModule):
 			)
 			self.config = self.bert.config
 		if classifier_feature_sizes is None:
-			classifier_feature_sizes = self.config.hidden_size
-		classifier_input_size = classifier_feature_sizes
+			classifier_feature_sizes = 0
+			# classifier_feature_sizes = self.config.hidden_size
+		# 39
+		classifier_input_size = self.config.hidden_size
+		# before 39
+		# classifier_input_size = classifier_feature_sizes
 
 		self.has_sentiment = False
 		self.sentiment_labels = sentiment_labels
@@ -52,13 +56,13 @@ class CovidTwitterStanceModel(pl.LightningModule):
 			logging.info('Using sentiment data...')
 			self.sentiment_embeddings = nn.Embedding(
 				num_embeddings=len(sentiment_labels),
-				embedding_dim=classifier_feature_sizes
+				embedding_dim=self.config.hidden_size
 			)
 			self.sentiment_pooling = CrossAttentionPooling(
-				hidden_size=classifier_feature_sizes,
+				hidden_size=self.config.hidden_size,
 				dropout_prob=self.config.hidden_dropout_prob
 			)
-			classifier_input_size += classifier_feature_sizes
+			classifier_input_size += self.config.hidden_size
 			self.has_sentiment = True
 
 		self.has_emotion = False
@@ -67,13 +71,13 @@ class CovidTwitterStanceModel(pl.LightningModule):
 			logging.info('Using emotion data...')
 			self.emotion_embeddings = nn.Embedding(
 				num_embeddings=len(emotion_labels),
-				embedding_dim=classifier_feature_sizes
+				embedding_dim=self.config.hidden_size
 			)
 			self.emotion_pooling = CrossAttentionPooling(
-				hidden_size=classifier_feature_sizes,
+				hidden_size=self.config.hidden_size,
 				dropout_prob=self.config.hidden_dropout_prob
 			)
-			classifier_input_size += classifier_feature_sizes
+			classifier_input_size += self.config.hidden_size
 			self.has_emotion = True
 
 		self.has_irony = False
@@ -82,15 +86,15 @@ class CovidTwitterStanceModel(pl.LightningModule):
 			logging.info('Using irony data...')
 			self.irony_embeddings = nn.Embedding(
 				num_embeddings=len(irony_labels),
-				embedding_dim=classifier_feature_sizes
+				embedding_dim=self.config.hidden_size
 			)
 			self.irony_pooling = CrossAttentionPooling(
-				hidden_size=classifier_feature_sizes,
+				hidden_size=self.config.hidden_size,
 				dropout_prob=self.config.hidden_dropout_prob
 			)
-			classifier_input_size += classifier_feature_sizes
+			classifier_input_size += self.config.hidden_size
 			self.has_irony = True
-
+		classifier_input_size += classifier_feature_sizes
 		# TODO consider different representation / pooling for each stance type
 		self.dropout = nn.Dropout(
 			p=self.config.hidden_dropout_prob
@@ -414,15 +418,6 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 				token_type_ids=token_type_ids
 			)
 		embedding_output = outputs[0]
-		gcn_outputs = []
-		for graph_name in self.graph_names:
-			gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
-			gcn_edges = batch[f'{graph_name}_edges']
-			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
-			gcn_outputs.append(gcn_output)
-
-		embedding_output = torch.cat(gcn_outputs, dim=-1)
-
 		cls_output = embedding_output[:, 0]
 		# TODO alternative to cls, consider stance embedding attention pooling + separate classification representations
 		classifier_inputs = [cls_output]
@@ -457,6 +452,12 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 				attention_mask=attention_mask
 			)
 			classifier_inputs.append(i_outputs)
+
+		for graph_name in self.graph_names:
+			gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
+			gcn_edges = batch[f'{graph_name}_edges']
+			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
+			classifier_inputs.append(gcn_output)
 
 		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
 		classifier_inputs = self.dropout(classifier_inputs)

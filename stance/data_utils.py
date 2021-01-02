@@ -339,15 +339,17 @@ class StanceDataset(Dataset):
 								lexical_adj[input_idx, edge_idx] = 1.0
 								lexical_adj[edge_idx, input_idx] = 1.0
 
-						# CLS token is connected to everything
-						semantic_adj[:, 0] = 1.0
-						semantic_adj[0, :] = 1.0
-						# CLS token is connected to everything
-						emotion_adj[:, 0] = 1.0
-						emotion_adj[0, :] = 1.0
-						# CLS token is connected to everything
-						lexical_adj[:, 0] = 1.0
-						lexical_adj[0, :] = 1.0
+						# 37,38
+						# # CLS token is connected to everything
+						# semantic_adj[:, 0] = 1.0
+						# semantic_adj[0, :] = 1.0
+						# # CLS token is connected to everything
+						# emotion_adj[:, 0] = 1.0
+						# emotion_adj[0, :] = 1.0
+						# # CLS token is connected to everything
+						# lexical_adj[:, 0] = 1.0
+						# lexical_adj[0, :] = 1.0
+
 						ex['edges']['semantic'] = semantic_adj
 						ex['edges']['emotion'] = emotion_adj
 						ex['edges']['lexical'] = lexical_adj
