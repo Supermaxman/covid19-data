@@ -303,10 +303,10 @@ class StanceDataset(Dataset):
 									if token == '[SEP]':
 										current_token_type_id += 1
 
-						semantic_edges['[CLS]'] = {}
-						semantic_edges['[SEP]'] = {}
-						emotion_edges['[CLS]'] = {}
-						emotion_edges['[SEP]'] = {}
+						semantic_edges['[CLS]'] = set()
+						semantic_edges['[SEP]'] = set()
+						emotion_edges['[CLS]'] = set()
+						emotion_edges['[SEP]'] = set()
 						lexical_edges['[CLS]'] = {root_text}
 						lexical_edges['[SEP]'] = {root_text}
 
