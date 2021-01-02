@@ -112,3 +112,90 @@ class GraphAttention(nn.Module):
 
 	def __repr__(self):
 		return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+
+
+class TransformerGraphAttention(nn.Module):
+	def __init__(self, in_features, out_features, dropout_prob, activation=True):
+		super().__init__()
+		self.dropout = nn.Dropout(dropout_prob)
+		self.normalizer = nn.Softmax(dim=-1)
+		self.in_features = in_features
+		self.out_features = out_features
+		self.activation = activation
+
+		self.query = nn.Linear(in_features, out_features)
+		self.key = nn.Linear(in_features, out_features)
+		self.value = nn.Linear(in_features, out_features)
+
+	def forward(self, inputs, adj):
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		q = self.query(inputs)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		k = self.key(inputs)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		v = self.value(inputs)
+
+		adj = adj.float()
+		adj = adj.unsqueeze(dim=1)
+		adj = (1.0 - adj) * -10000.0
+
+		# [bsize, seq_len, hidden_size] x [bsize, hidden_size, seq_len] -> [bsize, seq_len, seq_len]
+		a = torch.matmul(q, k.transpose(-1, -2))
+		a = a / math.sqrt(q.shape[-1])
+		a = a + adj
+		a_probs = self.normalizer(a)
+		a_probs = self.dropout(a_probs)
+		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size] -> [bsize, seq_len, hidden_size]
+		h_prime = torch.matmul(a_probs, v)
+
+		if self.activation:
+			return F.elu(h_prime)
+		else:
+			return h_prime
+
+	def __repr__(self):
+		return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+
+
+class EdgeTransformerGraphAttention(nn.Module):
+	def __init__(self, in_features, out_features, dropout_prob, activation=True):
+		super().__init__()
+		self.dropout = nn.Dropout(dropout_prob)
+		self.normalizer = nn.Softmax(dim=-1)
+		self.in_features = in_features
+		self.out_features = out_features
+		self.activation = activation
+
+		self.query = nn.Linear(in_features, out_features)
+		self.key = nn.Linear(in_features, out_features)
+		self.value = nn.Linear(in_features, out_features)
+
+	def forward(self, inputs, adj):
+		# TODO
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		q = self.query(inputs)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		k = self.key(inputs)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
+		v = self.value(inputs)
+
+		adj = adj.float()
+		adj = adj.unsqueeze(dim=1)
+		adj = (1.0 - adj) * -10000.0
+
+		# [bsize, seq_len, hidden_size] x [bsize, hidden_size, seq_len] -> [bsize, seq_len, seq_len]
+		a = torch.matmul(q, k.transpose(-1, -2))
+		a = a / math.sqrt(q.shape[-1])
+		a = a + adj
+		a_probs = self.normalizer(a)
+		a_probs = self.dropout(a_probs)
+		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size] -> [bsize, seq_len, hidden_size]
+		h_prime = torch.matmul(a_probs, v)
+
+		if self.activation:
+			return F.elu(h_prime)
+		else:
+			return h_prime
+
+	def __repr__(self):
+		return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'

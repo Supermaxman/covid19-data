@@ -9,7 +9,7 @@ import os
 import math
 import logging
 
-from gcn_layers import GraphConvolution, GraphAttention
+from gcn_layers import GraphConvolution, GraphAttention, TransformerGraphAttention
 
 
 class CovidTwitterStanceModel(pl.LightningModule):
@@ -382,10 +382,20 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 						dropout=self.config.hidden_dropout_prob,
 						alpha=0.2,
 						concat=True
-					)for graph_name in self.graph_names
+					) for graph_name in self.graph_names
 				}
 			)
-
+		elif self.gcn_type == 'transformer':
+			self.gcns = nn.ModuleDict(
+				{
+					f'{graph_name}_gcn': TransformerGraphAttention(
+						in_features=gcn_size,
+						out_features=gcn_size,
+						dropout_prob=self.config.hidden_dropout_prob,
+						activation=True
+					) for graph_name in self.graph_names
+				}
+			)
 		else:
 			raise ValueError(f'Unknown gcn_type: {self.gcn_type}')
 
