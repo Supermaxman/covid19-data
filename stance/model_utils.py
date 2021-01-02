@@ -349,7 +349,7 @@ class CovidTwitterStanceModel(pl.LightningModule):
 
 class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 	def __init__(self, freeze_lm, gcn_size, gcn_type, graph_names, *args, **kwargs):
-		super().__init__(classifier_feature_sizes=gcn_size, *args, **kwargs)
+		super().__init__(classifier_feature_sizes=gcn_size * len(self.graph_names), *args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
 		self.gcn_projs = nn.ModuleDict(
@@ -405,13 +405,17 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 			)
 		embedding_output = outputs[0]
 		gcn_outputs = []
+		logging.info(f'LM Output Shape: {embedding_output.shape}')
 		for graph_name in self.graph_names:
 			gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
+			logging.info(f'Graph {graph_name} Input Shape: {gcn_ctx_input.shape}')
 			gcn_edges = batch[f'{graph_name}_edges']
 			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
+			logging.info(f'Graph {graph_name} Output Shape: {gcn_output.shape}')
 			gcn_outputs.append(gcn_output)
 
 		embedding_output = torch.cat(gcn_outputs, dim=-1)
+		logging.info(f'Final Graph Output Shape: {embedding_output.shape}')
 
 		cls_output = embedding_output[:, 0]
 		# TODO alternative to cls, consider stance embedding attention pooling + separate classification representations

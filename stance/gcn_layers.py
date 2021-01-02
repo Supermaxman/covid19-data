@@ -88,9 +88,13 @@ class GraphAttention(nn.Module):
 		self.leakyrelu = nn.LeakyReLU(self.alpha)
 
 	def forward(self, inputs, adj):
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		h = torch.matmul(inputs, self.W)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		f_1 = torch.matmul(h, self.a1)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		f_2 = torch.matmul(h, self.a2)
+		#
 		e = self.leakyrelu(f_1 + f_2.transpose(-2, -1))
 
 		zero_vec = -9e15 * torch.ones_like(e)
