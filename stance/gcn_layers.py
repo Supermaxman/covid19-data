@@ -46,8 +46,12 @@ class GraphConvolution(Module):
 			nn.init.constant_(self.bias.data, 0.0)
 
 	def forward(self, inputs, adj):
-		support = torch.mm(inputs, self.weight)
-		output = torch.mm(adj, support)
+		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size]
+		# support = torch.mm(inputs, self.weight)
+		support = torch.matmul(inputs, self.weight)
+		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size]
+		# output = torch.mm(adj, support)
+		output = torch.matmul(adj, support)
 		if self.bias is not None:
 			return output + self.bias
 		else:
@@ -84,12 +88,10 @@ class GraphAttention(nn.Module):
 		self.leakyrelu = nn.LeakyReLU(self.alpha)
 
 	def forward(self, inputs, adj):
-		h = torch.mm(inputs, self.W)
-		N = h.size()[0]
-
+		h = torch.matmul(inputs, self.W)
 		f_1 = torch.matmul(h, self.a1)
 		f_2 = torch.matmul(h, self.a2)
-		e = self.leakyrelu(f_1 + f_2.transpose(0, 1))
+		e = self.leakyrelu(f_1 + f_2.transpose(-2, -1))
 
 		zero_vec = -9e15 * torch.ones_like(e)
 		attention = torch.where(adj > 0, e, zero_vec)
