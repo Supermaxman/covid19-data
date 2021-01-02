@@ -134,14 +134,14 @@ class TransformerGraphAttention(nn.Module):
 		k = self.key(inputs)
 		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		v = self.value(inputs)
-
+		# [bsize, seq_len, seq_len]
 		adj = adj.float()
-		adj = adj.unsqueeze(dim=1)
 		adj = (1.0 - adj) * -10000.0
 
 		# [bsize, seq_len, hidden_size] x [bsize, hidden_size, seq_len] -> [bsize, seq_len, seq_len]
 		a = torch.matmul(q, k.transpose(-1, -2))
 		a = a / math.sqrt(q.shape[-1])
+		# [bsize, seq_len, seq_len] + [bsize, seq_len, seq_len]
 		a = a + adj
 		a_probs = self.normalizer(a)
 		a_probs = self.dropout(a_probs)
