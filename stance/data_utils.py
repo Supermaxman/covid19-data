@@ -191,10 +191,10 @@ class StanceDataset(Dataset):
 		if token_features is None:
 			token_features = {}
 
-		emotion_nodes = defaultdict(set)
-		for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
-			for emotion in [value[4], value[5]]:
-				emotion_nodes[emotion].add(key)
+		# emotion_nodes = defaultdict(set)
+		# for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
+		# 	for emotion in [value[4], value[5]]:
+		# 		emotion_nodes[emotion].add(key)
 
 		if documents is not None:
 			for doc in tqdm(documents, desc='loading documents...'):
@@ -233,6 +233,7 @@ class StanceDataset(Dataset):
 						max_input_idx = 0
 						semantic_edges = {}
 						emotion_edges = {}
+						reverse_emotion_edges = defaultdict(set)
 						lexical_edges = {}
 						root_text = None
 						tokens = ['[CLS]'] + misconception_token_features[m_id] + ['[SEP]'] + token_features[tweet_id] + ['[SEP]']
@@ -266,14 +267,17 @@ class StanceDataset(Dataset):
 									semantic_edges[text] = set(sentic['semantics'])
 									for i in range(num_semantic_hops-1):
 										semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
-									emotion_edges[text] = set()
-									for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
-										emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+									emotion_edges[text] = {sentic['primary_mood'], sentic['secondary_mood']}
+									reverse_emotion_edges[sentic['primary_mood']].add(text)
+									reverse_emotion_edges[sentic['secondary_mood']].add(text)
 
-									for i in range(num_emotion_hops - 1):
-										new_emotions = sentic_expand(emotion_edges[text], [4, 5])
-										for emotion in new_emotions:
-											emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+									# for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
+									# 	emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+
+									# for i in range(num_emotion_hops - 1):
+									# 	new_emotions = sentic_expand(emotion_edges[text], [4, 5])
+									# 	for emotion in new_emotions:
+									# 		emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
 
 								lexical_edges[text] = {head}
 
@@ -308,6 +312,10 @@ class StanceDataset(Dataset):
 
 						# TODO implement num_lexical_hops
 						# TODO determine if CLS and SEP should be attached
+
+						for text in emotion_edges.keys():
+							emotions = emotion_edges[text]
+							emotion_edges[text] = emotion_edges[text].union(set(flatten(reverse_emotion_edges[emotion] for emotion in emotions)))
 
 						semantic_adj = np.eye(max_input_idx, dtype=np.float32)
 						emotion_adj = np.eye(max_input_idx, dtype=np.float32)
