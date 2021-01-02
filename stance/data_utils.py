@@ -346,6 +346,8 @@ class StanceDataset(Dataset):
 						ex['token_type_ids'] = token_type_ids
 						ex['attention_mask'] = attention_mask
 
+						import sys
+						np.set_printoptions(threshold=sys.maxsize)
 						print('text_map')
 						print(text_map)
 						input()
