@@ -226,141 +226,141 @@ class StanceDataset(Dataset):
 						ex['scores']['irony'] = format_predictions(irony_preds[tweet_id], irony_labels)
 
 					if tweet_id in token_features:
-						input_ids = []
-						token_type_ids = []
-						attention_mask = []
-						input_id_texts = []
-						input_idx_map = defaultdict(list)
-						text_map = {}
-						current_token_type_id = 0
-						max_input_idx = 0
-						semantic_edges = {}
-						emotion_edges = {}
-						reverse_emotion_edges = defaultdict(set)
-						lexical_edges = {}
-						root_text = None
-						# TODO re-write this because using tokens from features is not working, terrible results with BERT alone.
-						# TODO can do both semantic and emotion edges with bert tokenization by reconstructing tokens, stripping
-						# TODO punctuation and making lowercase.
-						# TODO BUT unable at the moment to re-create nlp dependency tags... figure this out
-						tokens = ['[CLS]'] + misconception_token_features[m_id] + ['[SEP]'] + token_features[tweet_id] + ['[SEP]']
-						for token in tokens:
-							if isinstance(token, dict):
-								text = token['text']
-								# TODO add as features
-								pos = token['pos']
-								dep = token['dep']
-								head = token['head']
-								# 0 'pleasantness_value',
-								# 1 'attention_value',
-								# 2 'sensitivity_value',
-								# 3 'aptitude_value',
-								# 4 'primary_mood',
-								# 5 'secondary_mood',
-								# 6 'polarity_label',
-								# 7 'polarity_value',
-								# 8 'semantics1',
-								# 9 'semantics2',
-								# 10 'semantics3',
-								# 11 'semantics4',
-								# 12 'semantics5'
-								if dep == 'ROOT':
-									root_text = text
-								sentic = token['sentic']
-								if sentic is None:
-									semantic_edges[text] = set()
-									emotion_edges[text] = set()
-								else:
-									semantic_edges[text] = set(sentic['semantics'])
-									for i in range(num_semantic_hops-1):
-										semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
-									emotion_edges[text] = {sentic['primary_mood'], sentic['secondary_mood']}
-									reverse_emotion_edges[sentic['primary_mood']].add(text)
-									reverse_emotion_edges[sentic['secondary_mood']].add(text)
-
-									# for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
-									# 	emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
-
-									# for i in range(num_emotion_hops - 1):
-									# 	new_emotions = sentic_expand(emotion_edges[text], [4, 5])
-									# 	for emotion in new_emotions:
-									# 		emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
-
-								lexical_edges[text] = {head}
-
-								token_tokens = tokenizer(text=text, add_special_tokens=False)
-								for input_id in token_tokens['input_ids']:
-									input_ids.append(input_id)
-									token_type_ids.append(current_token_type_id)
-									attention_mask.append(1)
-									input_id_texts.append(text)
-									input_idx_map[text].append(max_input_idx)
-									text_map[max_input_idx] = text
-									max_input_idx += 1
-							else:
-								if token == '[CLS]' or token == '[SEP]':
-									token_tokens = tokenizer(text=token, add_special_tokens=False)
-									input_ids.append(token_tokens['input_ids'][0])
-									token_type_ids.append(current_token_type_id)
-									attention_mask.append(1)
-									input_id_texts.append(token)
-									input_idx_map[token].append(max_input_idx)
-									text_map[max_input_idx] = token
-									max_input_idx += 1
-									if token == '[SEP]':
-										current_token_type_id += 1
-
-						semantic_edges['[CLS]'] = set()
-						semantic_edges['[SEP]'] = set()
-						emotion_edges['[CLS]'] = set()
-						emotion_edges['[SEP]'] = set()
-						lexical_edges['[CLS]'] = {root_text}
-						lexical_edges['[SEP]'] = {root_text}
-
-						# TODO implement num_lexical_hops and emotion_hops
-						# TODO issue with emotion hops: requires reverse emotion -> all tokens, really slow to compute > 1 hop
-						# TODO determine if CLS and SEP should be attached
-						# text -> emotion node -> other text in sentence with same emotions
-						for text in emotion_edges.keys():
-							emotions = emotion_edges[text]
-							emotion_edges[text] = emotion_edges[text].union(
-								set(flatten(reverse_emotion_edges[emotion] for emotion in emotions))
-							)
-
-						semantic_adj = np.eye(max_input_idx, dtype=np.float32)
-						emotion_adj = np.eye(max_input_idx, dtype=np.float32)
-						lexical_adj = np.eye(max_input_idx, dtype=np.float32)
-						for input_idx in range(max_input_idx):
-							input_idx_text = text_map[input_idx]
-							i_semantic_edges = set(flatten([input_idx_map[e_txt] for e_txt in semantic_edges[input_idx_text]]))
-							for edge_idx in i_semantic_edges:
-								semantic_adj[input_idx, edge_idx] = 1.0
-								semantic_adj[edge_idx, input_idx] = 1.0
-
-							i_emotion_edges = set(flatten([input_idx_map[e_txt] for e_txt in emotion_edges[input_idx_text]]))
-							for edge_idx in i_emotion_edges:
-								emotion_adj[input_idx, edge_idx] = 1.0
-								emotion_adj[edge_idx, input_idx] = 1.0
-
-							i_lexical_edges = set(flatten([input_idx_map[e_txt] for e_txt in lexical_edges[input_idx_text]]))
-							for edge_idx in i_lexical_edges:
-								lexical_adj[input_idx, edge_idx] = 1.0
-								lexical_adj[edge_idx, input_idx] = 1.0
-
-						# 37,38
-						# # CLS token is connected to everything
-						# semantic_adj[:, 0] = 1.0
-						# semantic_adj[0, :] = 1.0
-						# # CLS token is connected to everything
-						# emotion_adj[:, 0] = 1.0
-						# emotion_adj[0, :] = 1.0
-						# # CLS token is connected to everything
-						# lexical_adj[:, 0] = 1.0
-						# lexical_adj[0, :] = 1.0
-
-						ex['edges']['semantic'] = semantic_adj
-						ex['edges']['emotion'] = emotion_adj
-						ex['edges']['lexical'] = lexical_adj
+						# input_ids = []
+						# token_type_ids = []
+						# attention_mask = []
+						# input_id_texts = []
+						# input_idx_map = defaultdict(list)
+						# text_map = {}
+						# current_token_type_id = 0
+						# max_input_idx = 0
+						# semantic_edges = {}
+						# emotion_edges = {}
+						# reverse_emotion_edges = defaultdict(set)
+						# lexical_edges = {}
+						# root_text = None
+						# # TODO re-write this because using tokens from features is not working, terrible results with BERT alone.
+						# # TODO can do both semantic and emotion edges with bert tokenization by reconstructing tokens, stripping
+						# # TODO punctuation and making lowercase.
+						# # TODO BUT unable at the moment to re-create nlp dependency tags... figure this out
+						# tokens = ['[CLS]'] + misconception_token_features[m_id] + ['[SEP]'] + token_features[tweet_id] + ['[SEP]']
+						# for token in tokens:
+						# 	if isinstance(token, dict):
+						# 		text = token['text']
+						# 		# TODO add as features
+						# 		pos = token['pos']
+						# 		dep = token['dep']
+						# 		head = token['head']
+						# 		# 0 'pleasantness_value',
+						# 		# 1 'attention_value',
+						# 		# 2 'sensitivity_value',
+						# 		# 3 'aptitude_value',
+						# 		# 4 'primary_mood',
+						# 		# 5 'secondary_mood',
+						# 		# 6 'polarity_label',
+						# 		# 7 'polarity_value',
+						# 		# 8 'semantics1',
+						# 		# 9 'semantics2',
+						# 		# 10 'semantics3',
+						# 		# 11 'semantics4',
+						# 		# 12 'semantics5'
+						# 		if dep == 'ROOT':
+						# 			root_text = text
+						# 		sentic = token['sentic']
+						# 		if sentic is None:
+						# 			semantic_edges[text] = set()
+						# 			emotion_edges[text] = set()
+						# 		else:
+						# 			semantic_edges[text] = set(sentic['semantics'])
+						# 			for i in range(num_semantic_hops-1):
+						# 				semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
+						# 			emotion_edges[text] = {sentic['primary_mood'], sentic['secondary_mood']}
+						# 			reverse_emotion_edges[sentic['primary_mood']].add(text)
+						# 			reverse_emotion_edges[sentic['secondary_mood']].add(text)
+						#
+						# 			# for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
+						# 			# 	emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+						#
+						# 			# for i in range(num_emotion_hops - 1):
+						# 			# 	new_emotions = sentic_expand(emotion_edges[text], [4, 5])
+						# 			# 	for emotion in new_emotions:
+						# 			# 		emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+						#
+						# 		lexical_edges[text] = {head}
+						#
+						# 		token_tokens = tokenizer(text=text, add_special_tokens=False)
+						# 		for input_id in token_tokens['input_ids']:
+						# 			input_ids.append(input_id)
+						# 			token_type_ids.append(current_token_type_id)
+						# 			attention_mask.append(1)
+						# 			input_id_texts.append(text)
+						# 			input_idx_map[text].append(max_input_idx)
+						# 			text_map[max_input_idx] = text
+						# 			max_input_idx += 1
+						# 	else:
+						# 		if token == '[CLS]' or token == '[SEP]':
+						# 			token_tokens = tokenizer(text=token, add_special_tokens=False)
+						# 			input_ids.append(token_tokens['input_ids'][0])
+						# 			token_type_ids.append(current_token_type_id)
+						# 			attention_mask.append(1)
+						# 			input_id_texts.append(token)
+						# 			input_idx_map[token].append(max_input_idx)
+						# 			text_map[max_input_idx] = token
+						# 			max_input_idx += 1
+						# 			if token == '[SEP]':
+						# 				current_token_type_id += 1
+						#
+						# semantic_edges['[CLS]'] = set()
+						# semantic_edges['[SEP]'] = set()
+						# emotion_edges['[CLS]'] = set()
+						# emotion_edges['[SEP]'] = set()
+						# lexical_edges['[CLS]'] = {root_text}
+						# lexical_edges['[SEP]'] = {root_text}
+						#
+						# # TODO implement num_lexical_hops and emotion_hops
+						# # TODO issue with emotion hops: requires reverse emotion -> all tokens, really slow to compute > 1 hop
+						# # TODO determine if CLS and SEP should be attached
+						# # text -> emotion node -> other text in sentence with same emotions
+						# for text in emotion_edges.keys():
+						# 	emotions = emotion_edges[text]
+						# 	emotion_edges[text] = emotion_edges[text].union(
+						# 		set(flatten(reverse_emotion_edges[emotion] for emotion in emotions))
+						# 	)
+						#
+						# semantic_adj = np.eye(max_input_idx, dtype=np.float32)
+						# emotion_adj = np.eye(max_input_idx, dtype=np.float32)
+						# lexical_adj = np.eye(max_input_idx, dtype=np.float32)
+						# for input_idx in range(max_input_idx):
+						# 	input_idx_text = text_map[input_idx]
+						# 	i_semantic_edges = set(flatten([input_idx_map[e_txt] for e_txt in semantic_edges[input_idx_text]]))
+						# 	for edge_idx in i_semantic_edges:
+						# 		semantic_adj[input_idx, edge_idx] = 1.0
+						# 		semantic_adj[edge_idx, input_idx] = 1.0
+						#
+						# 	i_emotion_edges = set(flatten([input_idx_map[e_txt] for e_txt in emotion_edges[input_idx_text]]))
+						# 	for edge_idx in i_emotion_edges:
+						# 		emotion_adj[input_idx, edge_idx] = 1.0
+						# 		emotion_adj[edge_idx, input_idx] = 1.0
+						#
+						# 	i_lexical_edges = set(flatten([input_idx_map[e_txt] for e_txt in lexical_edges[input_idx_text]]))
+						# 	for edge_idx in i_lexical_edges:
+						# 		lexical_adj[input_idx, edge_idx] = 1.0
+						# 		lexical_adj[edge_idx, input_idx] = 1.0
+						#
+						# # 37,38
+						# # # CLS token is connected to everything
+						# # semantic_adj[:, 0] = 1.0
+						# # semantic_adj[0, :] = 1.0
+						# # # CLS token is connected to everything
+						# # emotion_adj[:, 0] = 1.0
+						# # emotion_adj[0, :] = 1.0
+						# # # CLS token is connected to everything
+						# # lexical_adj[:, 0] = 1.0
+						# # lexical_adj[0, :] = 1.0
+						#
+						# ex['edges']['semantic'] = semantic_adj
+						# ex['edges']['emotion'] = emotion_adj
+						# ex['edges']['lexical'] = lexical_adj
 
 						token_data = tokenizer(
 							m_text,
