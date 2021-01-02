@@ -202,12 +202,15 @@ class StanceDataset(Dataset):
 					if labeled:
 						m_label = label_text_to_id(m['label'])
 					tweet_id = doc['id_str']
+					# TODO add @<user> and <url> in
+					tweet_text = doc['full_text']
+					m_text = m['misconception_text']
 					m_id = m['misconception_id']
 					ex = {
 						'id': tweet_id,
-						'text': doc['full_text'],
+						'text': tweet_text,
 						'question_id': m_id,
-						'query': m['misconception_text'],
+						'query': m_text,
 						'label': m_label,
 						'scores': {},
 						'edges': {},
@@ -235,6 +238,10 @@ class StanceDataset(Dataset):
 						reverse_emotion_edges = defaultdict(set)
 						lexical_edges = {}
 						root_text = None
+						# TODO re-write this because using tokens from features is not working, terrible results with BERT alone.
+						# TODO can do both semantic and emotion edges with bert tokenization by reconstructing tokens, stripping
+						# TODO punctuation and making lowercase.
+						# TODO BUT unable at the moment to re-create nlp dependency tags... figure this out
 						tokens = ['[CLS]'] + misconception_token_features[m_id] + ['[SEP]'] + token_features[tweet_id] + ['[SEP]']
 						for token in tokens:
 							if isinstance(token, dict):
@@ -353,9 +360,17 @@ class StanceDataset(Dataset):
 						ex['edges']['semantic'] = semantic_adj
 						ex['edges']['emotion'] = emotion_adj
 						ex['edges']['lexical'] = lexical_adj
-						ex['input_ids'] = input_ids
-						ex['token_type_ids'] = token_type_ids
-						ex['attention_mask'] = attention_mask
+
+						token_data = tokenizer(
+							m_text,
+							tweet_text
+						)
+
+						ex['input_ids'] = token_data['input_ids']
+						ex['token_type_ids'] = token_data['token_type_ids']
+						ex['attention_mask'] = token_data['attention_mask']
+
+
 
 						# import sys
 						# np.set_printoptions(threshold=sys.maxsize)

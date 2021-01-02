@@ -4,7 +4,7 @@ import json
 import argparse
 import logging
 import pytorch_lightning as pl
-from transformers import AutoTokenizer
+from transformers import BertTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
@@ -81,7 +81,8 @@ if __name__ == '__main__':
 	)
 
 	logging.info(f'Loading tokenizer: {args.pre_model_name}')
-	tokenizer = AutoTokenizer.from_pretrained(args.pre_model_name)
+	# tokenizer = AutoTokenizer.from_pretrained(args.pre_model_name)
+	tokenizer = BertTokenizer.from_pretrained(args.pre_model_name)
 	logging.info(f'Loading dataset: {args.split_path}')
 
 	with open(args.split_path, 'r') as f:
