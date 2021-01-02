@@ -190,6 +190,7 @@ class StanceDataset(Dataset):
 			irony_preds = {}
 		if token_features is None:
 			token_features = {}
+		else:
 			emotion_nodes = defaultdict(set)
 			for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
 				for emotion in [value[4], value[5]]:
