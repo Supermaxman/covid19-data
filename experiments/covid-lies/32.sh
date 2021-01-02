@@ -46,6 +46,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_train.py \
           --gcn_type convolution \
           --gcn_size 100 \
+          --graph_names semantic,emotion,lexical \
           --model_type lm-gcn \
           --num_semantic_hops 3 \
           --num_emotion_hops 1 \
@@ -70,6 +71,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_predict.py \
           --gcn_type convolution \
           --gcn_size 100 \
+          --graph_names semantic,emotion,lexical \
           --model_type lm-gcn \
           --num_semantic_hops 3 \
           --num_emotion_hops 1 \

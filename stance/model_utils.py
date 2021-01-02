@@ -348,10 +348,10 @@ class CovidTwitterStanceModel(pl.LightningModule):
 
 
 class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
-	def __init__(self, freeze_lm, gcn_size, gcn_type, *args, **kwargs):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, graph_names, *args, **kwargs):
 		super().__init__(classifier_feature_sizes=gcn_size, *args, **kwargs)
 		self.freeze_lm = freeze_lm
-		self.graph_names = ['semantic', 'emotion', 'lexical']
+		self.graph_names = graph_names
 		self.gcn_projs = nn.ModuleDict(
 			{
 				f'{graph_name}_proj': nn.Linear(self.config.hidden_size, gcn_size) for graph_name in self.graph_names
@@ -369,7 +369,7 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 					f'{graph_name}_gcn': GraphConvolution(
 						in_features=gcn_size,
 						out_features=gcn_size
-					) for graph_name in self.graph_name
+					) for graph_name in self.graph_names
 				}
 			)
 
@@ -382,7 +382,7 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 						dropout=self.config.hidden_dropout_prob,
 						alpha=0.2,
 						concat=True
-					)for graph_name in self.graph_name
+					)for graph_name in self.graph_names
 				}
 			)
 

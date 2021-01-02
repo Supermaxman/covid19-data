@@ -47,6 +47,7 @@ if __name__ == '__main__':
 	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
 	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
+	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 
 	args = parser.parse_args()
 
@@ -226,6 +227,7 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path

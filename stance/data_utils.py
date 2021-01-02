@@ -310,12 +310,15 @@ class StanceDataset(Dataset):
 						lexical_edges['[CLS]'] = {root_text}
 						lexical_edges['[SEP]'] = {root_text}
 
-						# TODO implement num_lexical_hops
+						# TODO implement num_lexical_hops and emotion_hops
+						# TODO issue with emotion hops: requires reverse emotion -> all tokens, really slow to compute > 1 hop
 						# TODO determine if CLS and SEP should be attached
-
+						# text -> emotion node -> other text in sentence with same emotions
 						for text in emotion_edges.keys():
 							emotions = emotion_edges[text]
-							emotion_edges[text] = emotion_edges[text].union(set(flatten(reverse_emotion_edges[emotion] for emotion in emotions)))
+							emotion_edges[text] = emotion_edges[text].union(
+								set(flatten(reverse_emotion_edges[emotion] for emotion in emotions))
+							)
 
 						semantic_adj = np.eye(max_input_idx, dtype=np.float32)
 						emotion_adj = np.eye(max_input_idx, dtype=np.float32)
