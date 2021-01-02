@@ -94,14 +94,16 @@ class GraphAttention(nn.Module):
 		f_1 = torch.matmul(h, self.a1)
 		# [bsize, seq_len, hidden_size] x [hidden_size, hidden_size] -> [bsize, seq_len, hidden_size]
 		f_2 = torch.matmul(h, self.a2)
-		# [bsize, seq_len, hidden_size] + [bsize, hidden_size, seq_len] ->
+		# [bsize, seq_len, hidden_size] + [bsize, hidden_size, seq_len] -> [bsize, seq_len, seq_len]
 		# e = self.leakyrelu(f_1 + f_2.transpose(0, 1))
 		e = self.leakyrelu(f_1 + f_2.transpose(-2, -1))
 
 		zero_vec = -9e15 * torch.ones_like(e)
+		# [bsize, seq_len, seq_len] on
 		attention = torch.where(adj > 0, e, zero_vec)
 		attention = F.softmax(attention, dim=-1)
 		attention = F.dropout(attention, self.dropout, training=self.training)
+		# [bsize, seq_len, seq_len] x [bsize, seq_len, hidden_size] -> [bsize, seq_len, hidden_size]
 		h_prime = torch.matmul(attention, h)
 
 		if self.concat:
