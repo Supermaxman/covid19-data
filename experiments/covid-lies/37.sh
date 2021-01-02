@@ -70,7 +70,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
           --gcn_type transformer \
-          --gcn_size 512 \
+          --gcn_size 100 \
           --graph_names semantic,emotion,lexical \
           --model_type lm-gcn \
           --num_semantic_hops 3 \
