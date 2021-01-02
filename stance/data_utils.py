@@ -66,16 +66,17 @@ class StanceBatchCollator(object):
 			attention_mask[ex_idx, :len(ex_attention_mask)] = torch.tensor(ex_attention_mask, dtype=torch.long)
 			token_type_ids[ex_idx, :len(ex_token_type_ids)] = torch.tensor(ex_token_type_ids, dtype=torch.long)
 
-			for edge_name, edge_values in ex['edges'].items():
-				# truncation to max_seq_len, still need to pad
-				edge_values = edge_values[:self.max_seq_len, :self.max_seq_len]
-				batch_edge_name = edge_name + '_edges'
-				if batch_edge_name not in edges:
-					edges[batch_edge_name] = torch.zeros([batch_size, pad_seq_len, pad_seq_len], dtype=torch.float)
-				edges[batch_edge_name][ex_idx, :edge_values.shape[0], :edge_values.shape[1]] = torch.tensor(
-					edge_values,
-					dtype=torch.float
-				)
+			# TODO add back in when new tokenization is stable
+			# for edge_name, edge_values in ex['edges'].items():
+			# 	# truncation to max_seq_len, still need to pad
+			# 	edge_values = edge_values[:self.max_seq_len, :self.max_seq_len]
+			# 	batch_edge_name = edge_name + '_edges'
+			# 	if batch_edge_name not in edges:
+			# 		edges[batch_edge_name] = torch.zeros([batch_size, pad_seq_len, pad_seq_len], dtype=torch.float)
+			# 	edges[batch_edge_name][ex_idx, :edge_values.shape[0], :edge_values.shape[1]] = torch.tensor(
+			# 		edge_values,
+			# 		dtype=torch.float
+			# 	)
 
 			for score_name, score_values in ex['scores'].items():
 				scores[score_name + '_scores'].append(score_values)
