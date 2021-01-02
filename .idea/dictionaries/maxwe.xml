@@ -12,6 +12,7 @@
       <w>preds</w>
       <w>pretrained</w>
       <w>probs</w>
+      <w>sentic</w>
       <w>stdv</w>
       <w>warmup</w>
     </words>

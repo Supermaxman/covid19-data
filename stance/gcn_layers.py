@@ -157,6 +157,7 @@ class TransformerGraphAttention(nn.Module):
 		return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
 
 
+# TODO multi-head graph attention
 class EdgeTransformerGraphAttention(nn.Module):
 	def __init__(self, in_features, out_features, dropout_prob, activation=True):
 		super().__init__()
