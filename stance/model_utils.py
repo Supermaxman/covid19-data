@@ -457,7 +457,10 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 			gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
 			gcn_edges = batch[f'{graph_name}_edges']
 			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
-			classifier_inputs.append(gcn_output)
+			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size]
+			# TODO better GCN pooling
+			gcn_output_pool = gcn_output.mean(dim=-2)
+			classifier_inputs.append(gcn_output_pool)
 
 		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
 		classifier_inputs = self.dropout(classifier_inputs)
