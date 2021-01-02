@@ -9,7 +9,7 @@ from collections import defaultdict
 import senticnet5
 import numpy as np
 import string
-import spacy
+# import spacy
 
 
 def read_jsonl(path):
