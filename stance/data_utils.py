@@ -190,11 +190,11 @@ class StanceDataset(Dataset):
 			irony_preds = {}
 		if token_features is None:
 			token_features = {}
-		else:
-			emotion_nodes = defaultdict(set)
-			for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
-				for emotion in [value[4], value[5]]:
-					emotion_nodes[emotion].add(key)
+
+		emotion_nodes = defaultdict(set)
+		for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
+			for emotion in [value[4], value[5]]:
+				emotion_nodes[emotion].add(key)
 
 		if documents is not None:
 			for doc in tqdm(documents, desc='loading documents...'):
@@ -258,17 +258,22 @@ class StanceDataset(Dataset):
 								# 12 'semantics5'
 								if dep == 'ROOT':
 									root_text = text
-								semantic_edges[text] = set(token['sentic']['semantics'])
-								for i in range(num_semantic_hops-1):
-									semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
-								emotion_edges[text] = set()
-								for emotion in [token['sentic']['primary_mood'], token['sentic']['secondary_mood']]:
-									emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
-
-								for i in range(num_emotion_hops - 1):
-									new_emotions = sentic_expand(emotion_edges[text], [4, 5])
-									for emotion in new_emotions:
+								sentic = token['sentic']
+								if sentic is None:
+									semantic_edges[text] = set()
+									emotion_edges[text] = set()
+								else:
+									semantic_edges[text] = set(sentic['semantics'])
+									for i in range(num_semantic_hops-1):
+										semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
+									emotion_edges[text] = set()
+									for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
 										emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
+
+									for i in range(num_emotion_hops - 1):
+										new_emotions = sentic_expand(emotion_edges[text], [4, 5])
+										for emotion in new_emotions:
+											emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
 
 								lexical_edges[text] = {head}
 
