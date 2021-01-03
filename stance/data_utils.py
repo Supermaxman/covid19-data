@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 import random
 from collections import defaultdict
-import senticnet5
+# import senticnet5
 import numpy as np
 import string
 # import spacy
