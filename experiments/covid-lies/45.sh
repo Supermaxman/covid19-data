@@ -54,9 +54,6 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
           --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
@@ -76,9 +73,6 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
           --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
