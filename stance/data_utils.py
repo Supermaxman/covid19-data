@@ -83,6 +83,7 @@ class StanceBatchCollator(object):
 			for score_name, score_values in ex['scores'].items():
 				scores[score_name + '_scores'].append(score_values)
 				other_ids[score_name + '_ids'].append([i for i in range(len(score_values))])
+			other_ids['stance_ids'].append([i for i in range(3)])
 
 		batch = {
 			'id': ids,
@@ -100,7 +101,6 @@ class StanceBatchCollator(object):
 
 		for id_name, id_value in other_ids.items():
 			batch[id_name] = torch.tensor(id_value, dtype=torch.long)
-
 		for edge_name, edge_value in edges.items():
 			batch[edge_name] = edge_value
 
