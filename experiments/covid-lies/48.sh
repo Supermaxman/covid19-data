@@ -58,12 +58,8 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${TRAIN_STANCE} = true ]]; then
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
-          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --model_type lm \
-          --num_semantic_hops 1 \
-          --num_emotion_hops 1 \
-          --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
-          --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
+          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
@@ -78,12 +74,8 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --model_type lm \
-          --num_semantic_hops 1 \
-          --num_emotion_hops 1 \
-          --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
-          --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
+          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
