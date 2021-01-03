@@ -232,7 +232,11 @@ class StanceDataset(Dataset):
 					tweet_text = filter_tweet_text(tweet_text)
 					m_text = m['misconception_text']
 					m_id = m['misconception_id']
-
+					# TODO add type, theme, threat info
+					# m_info = mis_info[m_id]
+					# m_type = m_info['type']
+					# m_theme = m_info['theme']
+					# m_threat = m_info['threat']
 					token_data = tokenizer(
 						m_text,
 						tweet_text

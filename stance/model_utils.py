@@ -690,6 +690,119 @@ class CovidTwitterPoolingStanceModel(BaseCovidTwitterStanceModel):
 		return logits
 
 
+class CovidTwitterReducedPoolingStanceModel(BaseCovidTwitterStanceModel):
+	def __init__(
+			self, classifier_feature_sizes=None, sentiment_labels=None, emotion_labels=None, irony_labels=None,
+			*args, **kwargs
+	):
+		super().__init__(*args, **kwargs)
+		if classifier_feature_sizes is None:
+			classifier_feature_sizes = 0
+			# classifier_feature_sizes = self.config.hidden_size
+		# 39
+		classifier_input_size = self.config.hidden_size
+		# before 39
+		# classifier_input_size = classifier_feature_sizes
+
+		self.has_sentiment = False
+		self.sentiment_labels = sentiment_labels
+		if sentiment_labels is not None:
+			logging.info('Using sentiment data...')
+			self.sentiment_embeddings = nn.Embedding(
+				num_embeddings=len(sentiment_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.sentiment_pooling = ReducedCrossAttentionPooling(
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_sentiment = True
+
+		self.has_emotion = False
+		self.emotion_labels = emotion_labels
+		if emotion_labels is not None:
+			logging.info('Using emotion data...')
+			self.emotion_embeddings = nn.Embedding(
+				num_embeddings=len(emotion_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.emotion_pooling = ReducedCrossAttentionPooling(
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_emotion = True
+
+		self.has_irony = False
+		self.irony_labels = irony_labels
+		if irony_labels is not None:
+			logging.info('Using irony data...')
+			self.irony_embeddings = nn.Embedding(
+				num_embeddings=len(irony_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.irony_pooling = ReducedCrossAttentionPooling(
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_irony = True
+		classifier_input_size += classifier_feature_sizes
+		# TODO consider different representation / pooling for each stance type
+		self.dropout = nn.Dropout(
+			p=self.config.hidden_dropout_prob
+		)
+		self.classifier = nn.Linear(
+			classifier_input_size,
+			3
+		)
+
+	def forward(self, input_ids, attention_mask, token_type_ids, batch):
+		outputs = self.bert(
+			input_ids,
+			attention_mask=attention_mask,
+			token_type_ids=token_type_ids
+		)
+		contextualized_embeddings = outputs[0]
+		cls_output = contextualized_embeddings[:, 0]
+
+		classifier_inputs = [cls_output]
+		if self.has_sentiment:
+			s_embeddings = self.sentiment_embeddings(batch['sentiment_ids'])
+			# [bsize, emb_size]
+			s_outputs = self.sentiment_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=s_embeddings,
+				query_probs=batch['sentiment_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(s_outputs)
+		if self.has_emotion:
+			e_embeddings = self.emotion_embeddings(batch['emotion_ids'])
+			# [bsize, emb_size]
+			e_outputs = self.emotion_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=e_embeddings,
+				query_probs=batch['emotion_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(e_outputs)
+
+		if self.has_irony:
+			i_embeddings = self.irony_embeddings(batch['irony_ids'])
+			# [bsize, emb_size]
+			i_outputs = self.irony_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=i_embeddings,
+				query_probs=batch['irony_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(i_outputs)
+
+		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
+		classifier_inputs = self.dropout(classifier_inputs)
+		logits = self.classifier(classifier_inputs)
+		return logits
+
+
 def get_device_id():
 	try:
 		device_id = dist.get_rank()
@@ -733,6 +846,54 @@ class CrossAttentionPooling(nn.Module):
 		k = self.key(hidden_states)
 		# [bsize, seq_len, hidden_size]
 		v = self.value(hidden_states)
+		# [bsize, num_queries, hidden_size] x [bsize, hidden_size, seq_len] -> [bsize, num_queries, seq_len]
+		attention_scores = torch.matmul(q, k.transpose(-1, -2))
+		attention_scores = attention_scores / math.sqrt(self.hidden_size)
+		attention_scores = attention_scores + attention_mask
+
+		# [bsize, num_queries, seq_len]
+		# Normalize the attention scores to probabilities.
+		attention_probs = self.normalizer(attention_scores)
+		# This is actually dropping out entire tokens to attend to, which might
+		# seem a bit unusual, but is taken from the original Transformer paper.
+		attention_probs = self.dropout(attention_probs)
+		# [bsize, num_queries, seq_len] x [bsize, seq_len, hidden_size] -> [bsize, num_queries, hidden_size]
+		context_layer = torch.matmul(attention_probs, v)
+		# [bsize, 1, num_queries] x [bsize, num_queries, hidden_size] -> [bsize, 1, hidden_size]
+		final_layer = torch.matmul(query_probs.unsqueeze(1), context_layer)
+		# [bsize, hidden_size]
+		final_layer = final_layer.squeeze(dim=1)
+		return final_layer
+
+
+class ReducedCrossAttentionPooling(nn.Module):
+	def __init__(self, dropout_prob):
+		super().__init__()
+		self.dropout_prob = dropout_prob
+		self.dropout = nn.Dropout(dropout_prob)
+		self.normalizer = nn.Softmax(dim=-1)
+
+	def forward(self, hidden_states, queries, query_probs, attention_mask=None):
+		# [bsize, seq_len, hidden_size]
+		# hidden_states
+		# [bsize, num_queries, hidden_size]
+		# queries
+		# [bsize, num_queries]
+		# query_probs
+		# [bsize, seq_len]]
+		# attention_mask
+		# TODO consider multi-head
+		if attention_mask is None:
+			attention_mask = torch.ones(hidden_states.shape[:-1])
+		attention_mask = attention_mask.float()
+		attention_mask = attention_mask.unsqueeze(dim=1)
+		attention_mask = (1.0 - attention_mask) * -10000.0
+		# [bsize, num_queries, hidden_size]
+		q = queries
+		# [bsize, seq_len, hidden_size]
+		k = hidden_states
+		# [bsize, seq_len, hidden_size]
+		v = hidden_states
 		# [bsize, num_queries, hidden_size] x [bsize, hidden_size, seq_len] -> [bsize, num_queries, seq_len]
 		attention_scores = torch.matmul(q, k.transpose(-1, -2))
 		attention_scores = attention_scores / math.sqrt(self.hidden_size)
