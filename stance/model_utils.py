@@ -12,12 +12,11 @@ import logging
 from gcn_layers import GraphConvolution, GraphAttention, TransformerGraphAttention
 
 
-class CovidTwitterStanceModel(pl.LightningModule):
+class BaseCovidTwitterStanceModel(pl.LightningModule):
 	def __init__(
 			self, pre_model_name, learning_rate, weight_decay, lr_warmup, updates_total,
-			classifier_feature_sizes=None,
-			sentiment_labels=None, emotion_labels=None, irony_labels=None,
-			torch_cache_dir=None, predict_mode=False, predict_path=None, load_pretrained=False):
+			torch_cache_dir=None, predict_mode=False, predict_path=None, load_pretrained=False
+	):
 		super().__init__()
 		self.pre_model_name = pre_model_name
 		self.torch_cache_dir = torch_cache_dir
@@ -42,117 +41,10 @@ class CovidTwitterStanceModel(pl.LightningModule):
 				cache_dir=torch_cache_dir
 			)
 			self.config = self.bert.config
-		if classifier_feature_sizes is None:
-			classifier_feature_sizes = 0
-			# classifier_feature_sizes = self.config.hidden_size
-		# 39
-		classifier_input_size = self.config.hidden_size
-		# before 39
-		# classifier_input_size = classifier_feature_sizes
 
-		self.has_sentiment = False
-		self.sentiment_labels = sentiment_labels
-		if sentiment_labels is not None:
-			logging.info('Using sentiment data...')
-			self.sentiment_embeddings = nn.Embedding(
-				num_embeddings=len(sentiment_labels),
-				embedding_dim=self.config.hidden_size
-			)
-			self.sentiment_pooling = CrossAttentionPooling(
-				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
-			)
-			classifier_input_size += self.config.hidden_size
-			self.has_sentiment = True
-
-		self.has_emotion = False
-		self.emotion_labels = emotion_labels
-		if emotion_labels is not None:
-			logging.info('Using emotion data...')
-			self.emotion_embeddings = nn.Embedding(
-				num_embeddings=len(emotion_labels),
-				embedding_dim=self.config.hidden_size
-			)
-			self.emotion_pooling = CrossAttentionPooling(
-				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
-			)
-			classifier_input_size += self.config.hidden_size
-			self.has_emotion = True
-
-		self.has_irony = False
-		self.irony_labels = irony_labels
-		if irony_labels is not None:
-			logging.info('Using irony data...')
-			self.irony_embeddings = nn.Embedding(
-				num_embeddings=len(irony_labels),
-				embedding_dim=self.config.hidden_size
-			)
-			self.irony_pooling = CrossAttentionPooling(
-				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
-			)
-			classifier_input_size += self.config.hidden_size
-			self.has_irony = True
-		classifier_input_size += classifier_feature_sizes
-		# TODO consider different representation / pooling for each stance type
-		self.dropout = nn.Dropout(
-			p=self.config.hidden_dropout_prob
-		)
-		self.classifier = nn.Linear(
-			classifier_input_size,
-			3
-		)
 		self.criterion = nn.CrossEntropyLoss(reduction='none')
 		self.score_func = torch.nn.Softmax(dim=-1)
 		self.save_hyperparameters()
-
-	def forward(self, input_ids, attention_mask, token_type_ids, batch):
-		outputs = self.bert(
-			input_ids,
-			attention_mask=attention_mask,
-			token_type_ids=token_type_ids
-		)
-		contextualized_embeddings = outputs[0]
-		cls_output = contextualized_embeddings[:, 0]
-
-		classifier_inputs = [cls_output]
-		if self.has_sentiment:
-			s_embeddings = self.sentiment_embeddings(batch['sentiment_ids'])
-			# [bsize, emb_size]
-			s_outputs = self.sentiment_pooling(
-				hidden_states=contextualized_embeddings,
-				queries=s_embeddings,
-				query_probs=batch['sentiment_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(s_outputs)
-		if self.has_emotion:
-			e_embeddings = self.emotion_embeddings(batch['emotion_ids'])
-			# [bsize, emb_size]
-			e_outputs = self.emotion_pooling(
-				hidden_states=contextualized_embeddings,
-				queries=e_embeddings,
-				query_probs=batch['emotion_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(e_outputs)
-
-		if self.has_irony:
-			i_embeddings = self.irony_embeddings(batch['irony_ids'])
-			# [bsize, emb_size]
-			i_outputs = self.irony_pooling(
-				hidden_states=contextualized_embeddings,
-				queries=i_embeddings,
-				query_probs=batch['irony_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(i_outputs)
-
-		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
-		classifier_inputs = self.dropout(classifier_inputs)
-		logits = self.classifier(classifier_inputs)
-		return logits
 
 	def _forward_step(self, batch, batch_nb):
 		logits = self(
@@ -351,6 +243,122 @@ class CovidTwitterStanceModel(pl.LightningModule):
 		return loss
 
 
+class CovidTwitterStanceModel(BaseCovidTwitterStanceModel):
+	def __init__(
+			self, classifier_feature_sizes=None, sentiment_labels=None, emotion_labels=None, irony_labels=None,
+			*args, **kwargs
+	):
+		super().__init__(*args, **kwargs)
+		if classifier_feature_sizes is None:
+			classifier_feature_sizes = 0
+			# classifier_feature_sizes = self.config.hidden_size
+		# 39
+		classifier_input_size = self.config.hidden_size
+		# before 39
+		# classifier_input_size = classifier_feature_sizes
+
+		self.has_sentiment = False
+		self.sentiment_labels = sentiment_labels
+		if sentiment_labels is not None:
+			logging.info('Using sentiment data...')
+			self.sentiment_embeddings = nn.Embedding(
+				num_embeddings=len(sentiment_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.sentiment_pooling = CrossAttentionPooling(
+				hidden_size=self.config.hidden_size,
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_sentiment = True
+
+		self.has_emotion = False
+		self.emotion_labels = emotion_labels
+		if emotion_labels is not None:
+			logging.info('Using emotion data...')
+			self.emotion_embeddings = nn.Embedding(
+				num_embeddings=len(emotion_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.emotion_pooling = CrossAttentionPooling(
+				hidden_size=self.config.hidden_size,
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_emotion = True
+
+		self.has_irony = False
+		self.irony_labels = irony_labels
+		if irony_labels is not None:
+			logging.info('Using irony data...')
+			self.irony_embeddings = nn.Embedding(
+				num_embeddings=len(irony_labels),
+				embedding_dim=self.config.hidden_size
+			)
+			self.irony_pooling = CrossAttentionPooling(
+				hidden_size=self.config.hidden_size,
+				dropout_prob=self.config.hidden_dropout_prob
+			)
+			classifier_input_size += self.config.hidden_size
+			self.has_irony = True
+		classifier_input_size += classifier_feature_sizes
+		# TODO consider different representation / pooling for each stance type
+		self.dropout = nn.Dropout(
+			p=self.config.hidden_dropout_prob
+		)
+		self.classifier = nn.Linear(
+			classifier_input_size,
+			3
+		)
+
+	def forward(self, input_ids, attention_mask, token_type_ids, batch):
+		outputs = self.bert(
+			input_ids,
+			attention_mask=attention_mask,
+			token_type_ids=token_type_ids
+		)
+		contextualized_embeddings = outputs[0]
+		cls_output = contextualized_embeddings[:, 0]
+
+		classifier_inputs = [cls_output]
+		if self.has_sentiment:
+			s_embeddings = self.sentiment_embeddings(batch['sentiment_ids'])
+			# [bsize, emb_size]
+			s_outputs = self.sentiment_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=s_embeddings,
+				query_probs=batch['sentiment_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(s_outputs)
+		if self.has_emotion:
+			e_embeddings = self.emotion_embeddings(batch['emotion_ids'])
+			# [bsize, emb_size]
+			e_outputs = self.emotion_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=e_embeddings,
+				query_probs=batch['emotion_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(e_outputs)
+
+		if self.has_irony:
+			i_embeddings = self.irony_embeddings(batch['irony_ids'])
+			# [bsize, emb_size]
+			i_outputs = self.irony_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=i_embeddings,
+				query_probs=batch['irony_scores'],
+				attention_mask=attention_mask
+			)
+			classifier_inputs.append(i_outputs)
+
+		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
+		classifier_inputs = self.dropout(classifier_inputs)
+		logits = self.classifier(classifier_inputs)
+		return logits
+
+
 class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 	def __init__(self, freeze_lm, gcn_size, gcn_type, graph_names, *args, **kwargs):
 		super().__init__(classifier_feature_sizes=gcn_size * len(graph_names), *args, **kwargs)
@@ -461,6 +469,87 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 			# TODO better GCN pooling
 			gcn_output_pool = gcn_output.mean(dim=-2)
 			classifier_inputs.append(gcn_output_pool)
+
+		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
+		classifier_inputs = self.dropout(classifier_inputs)
+		logits = self.classifier(classifier_inputs)
+		return logits
+
+
+class CovidTwitterEmbeddingStanceModel(BaseCovidTwitterStanceModel):
+	def __init__(
+			self, classifier_feature_sizes=None, embedding_size=100,
+			sentiment_labels=None, emotion_labels=None, irony_labels=None,
+			*args, **kwargs
+	):
+		super().__init__(*args, **kwargs)
+		if classifier_feature_sizes is None:
+			classifier_feature_sizes = 0
+		classifier_input_size = self.config.hidden_size
+		self.has_sentiment = False
+		self.sentiment_labels = sentiment_labels
+		if sentiment_labels is not None:
+			logging.info('Using sentiment data...')
+			self.sentiment_embeddings = nn.Embedding(
+				num_embeddings=len(sentiment_labels),
+				embedding_dim=embedding_size
+			)
+			classifier_input_size += embedding_size
+			self.has_sentiment = True
+
+		self.has_emotion = False
+		self.emotion_labels = emotion_labels
+		if emotion_labels is not None:
+			logging.info('Using emotion data...')
+			self.emotion_embeddings = nn.Embedding(
+				num_embeddings=len(emotion_labels),
+				embedding_dim=embedding_size
+			)
+			classifier_input_size += embedding_size
+			self.has_emotion = True
+
+		self.has_irony = False
+		self.irony_labels = irony_labels
+		if irony_labels is not None:
+			logging.info('Using irony data...')
+			self.irony_embeddings = nn.Embedding(
+				num_embeddings=len(irony_labels),
+				embedding_dim=embedding_size
+			)
+			classifier_input_size += embedding_size
+			self.has_irony = True
+		classifier_input_size += classifier_feature_sizes
+		# TODO consider different representation / pooling for each stance type
+		self.dropout = nn.Dropout(
+			p=self.config.hidden_dropout_prob
+		)
+		self.classifier = nn.Linear(
+			classifier_input_size,
+			3
+		)
+
+	def forward(self, input_ids, attention_mask, token_type_ids, batch):
+		outputs = self.bert(
+			input_ids,
+			attention_mask=attention_mask,
+			token_type_ids=token_type_ids
+		)
+		contextualized_embeddings = outputs[0]
+		cls_output = contextualized_embeddings[:, 0]
+
+		classifier_inputs = [cls_output]
+		if self.has_sentiment:
+			s_emb_idx = torch.argmax(batch['sentiment_scores'], dim=-1)
+			s_outputs = self.sentiment_embeddings(s_emb_idx)
+			classifier_inputs.append(s_outputs)
+		if self.has_emotion:
+			e_emb_idx = torch.argmax(batch['emotion_scores'], dim=-1)
+			e_outputs = self.emotion_embeddings(e_emb_idx)
+			classifier_inputs.append(e_outputs)
+		if self.has_irony:
+			i_emb_idx = torch.argmax(batch['irony_scores'], dim=-1)
+			i_outputs = self.irony_embeddings(i_emb_idx)
+			classifier_inputs.append(i_outputs)
 
 		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
 		classifier_inputs = self.dropout(classifier_inputs)

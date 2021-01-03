@@ -8,7 +8,8 @@ from transformers import BertTokenizer
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get_device_id
+from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get_device_id, \
+	CovidTwitterEmbeddingStanceModel
 from data_utils import StanceDataset, StanceBatchCollator
 
 import torch
@@ -47,6 +48,7 @@ if __name__ == '__main__':
 	parser.add_argument('-mt', '--model_type', default='lm')
 	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
 	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
+	parser.add_argument('-es', '--embedding_size', default=100, type=int)
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 
@@ -275,6 +277,20 @@ if __name__ == '__main__':
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
 			graph_names=args.graph_names.split(','),
+			torch_cache_dir=args.torch_cache_dir,
+			load_pretrained=args.load_checkpoint is not None
+		)
+	elif model_type == 'lm-emb':
+		model = CovidTwitterEmbeddingStanceModel(
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			embedding_size=args.embedding_size,
 			torch_cache_dir=args.torch_cache_dir,
 			load_pretrained=args.load_checkpoint is not None
 		)
