@@ -71,6 +71,13 @@ if __name__ == '__main__':
 	elif split_type == 'normal':
 		kfold = KFold(n_splits=args.splits, shuffle=True)
 		splits = kfold.split(data)
+	elif split_type == 'normal_unique':
+		kfold = KFold(n_splits=args.splits, shuffle=True)
+		tweets = {}
+		for tweet in data:
+			tweets[tweet['id_str']] = tweet
+		data = [tweet for (tweet_id, tweet) in tweets.items()]
+		splits = kfold.split(data)
 	else:
 		raise ValueError(f'Unknown split type: {split_type}')
 	split_id = 1
