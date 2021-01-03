@@ -58,12 +58,10 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${TRAIN_STANCE} = true ]]; then
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
-          --model_type lm-ttt \
+          --model_type lm \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
+          --add_misconception_info \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
@@ -77,12 +75,10 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --model_type lm-ttt \
+          --model_type lm \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
+          --add_misconception_info \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \

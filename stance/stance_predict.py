@@ -50,6 +50,7 @@ if __name__ == '__main__':
 	parser.add_argument('-hl', '--num_lexical_hops', default=1, type=int)
 	parser.add_argument('-mt', '--model_type', default='lm')
 	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
+	parser.add_argument('-ami', '--add_mis_info', default=False, action='store_true')
 	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
 	parser.add_argument('-es', '--embedding_size', default=100, type=int)
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
@@ -203,6 +204,7 @@ if __name__ == '__main__':
 			num_emotion_hops=args.num_emotion_hops,
 			num_lexical_hops=args.num_lexical_hops,
 			mis_info=mis_info,
+			add_mis_info=args.add_mis_info,
 			labeled=False
 		)
 	elif args.mode == 'retrieval':

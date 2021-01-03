@@ -170,13 +170,13 @@ def format_predictions(preds, labels):
 # 10 'semantics3',
 # 11 'semantics4',
 # 12 'semantics5'
-def sentic_expand(sentic_edges, expand_list):
-	new_edges = set(sentic_edges)
-	for edge in sentic_edges:
-		edge_info = senticnet5.senticnet[edge]
-		for i in expand_list:
-			new_edges.add(edge_info[i])
-	return new_edges
+# def sentic_expand(sentic_edges, expand_list):
+# 	new_edges = set(sentic_edges)
+# 	for edge in sentic_edges:
+# 		edge_info = senticnet5.senticnet[edge]
+# 		for i in expand_list:
+# 			new_edges.add(edge_info[i])
+# 	return new_edges
 
 
 def flatten(l):
@@ -198,7 +198,7 @@ class StanceDataset(Dataset):
 			tokenizer=None,
 			token_features=None, misconception_token_features=None,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
-			mis_info=None,
+			mis_info=None, add_mis_info=False,
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
@@ -232,11 +232,13 @@ class StanceDataset(Dataset):
 					tweet_text = filter_tweet_text(tweet_text)
 					m_text = m['misconception_text']
 					m_id = m['misconception_id']
-					# TODO add type, theme, threat info
-					# m_info = mis_info[m_id]
-					# m_type = m_info['type']
-					# m_theme = m_info['theme']
-					# m_threat = m_info['threat']
+					if add_mis_info:
+						m_info = mis_info[m_id]
+						m_type = m_info['type']
+						m_theme = m_info['theme']
+						m_threat = m_info['threat']
+						# TODO add type, theme, threat info
+
 					token_data = tokenizer(
 						m_text,
 						tweet_text
@@ -457,6 +459,10 @@ class StanceDataset(Dataset):
 					m_label = m['predicted_label']
 				else:
 					m_label = hera_label_to_id(source, label_name)
+
+				# TODO annotate news / claims for this:
+				if add_mis_info:
+					raise NotImplementedError('Not annotated yet!')
 
 				token_data = tokenizer(
 					m_text,
