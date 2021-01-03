@@ -677,7 +677,11 @@ class CovidTwitterPoolingStanceModel(BaseCovidTwitterStanceModel):
 		# [bsize, 3, emb_size]
 		stance_embs = self.stance_embeddings(batch['stance_ids'])
 		# [bsize, 3, emb_size]
-		stance_pool_embs = self.stance_pooling(stance_embs)
+		stance_pool_embs = self.stance_pooling(
+				hidden_states=contextualized_embeddings,
+				queries=stance_embs,
+				attention_mask=attention_mask
+		)
 		logits = []
 		for stance_idx in range(3):
 			# [bsize, emb_size]
@@ -925,7 +929,7 @@ class AttentionPooling(nn.Module):
 		self.dropout = nn.Dropout(dropout_prob)
 		self.normalizer = nn.Softmax(dim=-1)
 
-	def forward(self, hidden_states, queries, query_probs, attention_mask=None):
+	def forward(self, hidden_states, queries, attention_mask=None):
 		# [bsize, seq_len, hidden_size]
 		# hidden_states
 		# [bsize, num_queries, hidden_size]
