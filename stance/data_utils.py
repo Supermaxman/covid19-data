@@ -193,6 +193,7 @@ class StanceDataset(Dataset):
 			self, documents=None, hera_documents=None,
 			keep_real=False,
 			sentiment_preds=None, emotion_preds=None, irony_preds=None,
+			coaid_sentiment_preds=None, coaid_emotion_preds=None, coaid_irony_preds=None,
 			sentiment_labels=None, emotion_labels=None, irony_labels=None,
 			tokenizer=None,
 			token_features=None, misconception_token_features=None,
@@ -205,10 +206,13 @@ class StanceDataset(Dataset):
 		# TODO for graph adjacency features
 		if sentiment_preds is None:
 			sentiment_preds = {}
+			coaid_sentiment_preds = {}
 		if emotion_preds is None:
 			emotion_preds = {}
+			coaid_emotion_preds = {}
 		if irony_preds is None:
 			irony_preds = {}
+			coaid_irony_preds = {}
 		if token_features is None:
 			token_features = {}
 
@@ -432,12 +436,15 @@ class StanceDataset(Dataset):
 					self.examples.append(ex)
 
 		if hera_documents is not None:
-			for doc in hera_documents:
+			for doc in tqdm(hera_documents, desc='loading HERA documents...'):
+				tweet_id = doc['id_str']
+				tweet_text = doc['full_text']
+				tweet_text = filter_tweet_text(tweet_text)
+
 				m = doc['misinformation']
 				info = doc['info']
-				question_id = info['index']
-				raise NotImplementedError('Need to implement this for HERA')
-				question_text = info['topic']['question']
+				m_text = info['topic']['title']
+				m_id = m['index']
 				source = info['source'].lower()
 				label_name = m['label_name'].lower()
 				if not keep_real and label_name == 'real':
@@ -447,13 +454,31 @@ class StanceDataset(Dataset):
 				else:
 					m_label = hera_label_to_id(source, label_name)
 
+				token_data = tokenizer(
+					m_text,
+					tweet_text
+				)
 				ex = {
-					'id': doc['id_str'],
-					'text': doc['full_text'],
-					'question_id': question_id,
-					'query': question_text,
+					'id': tweet_id,
+					'text': tweet_text,
+					'question_id': m_id,
+					'query': m_text,
 					'label': m_label,
+					'scores': {},
+					'edges': {},
+					'input_ids': token_data['input_ids'],
+					'token_type_ids': token_data['token_type_ids'],
+					'attention_mask': token_data['attention_mask'],
 				}
+				if tweet_id in coaid_sentiment_preds:
+					ex['scores']['sentiment'] = format_predictions(coaid_sentiment_preds[tweet_id], sentiment_labels)
+
+				if tweet_id in coaid_emotion_preds:
+					ex['scores']['emotion'] = format_predictions(coaid_emotion_preds[tweet_id], emotion_labels)
+
+				if tweet_id in coaid_irony_preds:
+					ex['scores']['irony'] = format_predictions(coaid_irony_preds[tweet_id], irony_labels)
+
 				self.num_labels[m_label] += 1
 				self.examples.append(ex)
 		self.num_examples = len(self.examples)

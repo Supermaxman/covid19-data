@@ -39,6 +39,9 @@ if __name__ == '__main__':
 	parser.add_argument('-sp', '--sentiment_path', default=None)
 	parser.add_argument('-ep', '--emotion_path', default=None)
 	parser.add_argument('-ip', '--irony_path', default=None)
+	parser.add_argument('-csp', '--coaid_sentiment_path', default=None)
+	parser.add_argument('-cep', '--coaid_emotion_path', default=None)
+	parser.add_argument('-cip', '--coaid_irony_path', default=None)
 	parser.add_argument('-tp', '--token_feature_path', default=None)
 	parser.add_argument('-mtp', '--misconception_token_feature_path', default=None)
 	parser.add_argument('-hs', '--num_semantic_hops', default=3, type=int)
@@ -143,6 +146,24 @@ if __name__ == '__main__':
 			irony_preds = json.load(f)
 		logging.info(f'Loaded irony predictions.')
 
+	coaid_sentiment_preds = None
+	if args.coaid_sentiment_path is not None:
+		with open(args.coaid_sentiment_path, 'r') as f:
+			coaid_sentiment_preds = json.load(f)
+		logging.info(f'Loaded COAID sentiment predictions.')
+
+	coaid_emotion_preds = None
+	if args.coaid_emotion_path is not None:
+		with open(args.coaid_emotion_path, 'r') as f:
+			coaid_emotion_preds = json.load(f)
+		logging.info(f'Loaded COAID emotion predictions.')
+
+	coaid_irony_preds = None
+	if args.coaid_irony_path is not None:
+		with open(args.coaid_irony_path, 'r') as f:
+			coaid_irony_preds = json.load(f)
+		logging.info(f'Loaded COAID irony predictions.')
+
 	token_features = None
 	misconception_token_features = None
 	if args.token_feature_path is not None:
@@ -170,6 +191,9 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			coaid_sentiment_preds=coaid_sentiment_preds,
+			coaid_emotion_preds=coaid_emotion_preds,
+			coaid_irony_preds=coaid_irony_preds,
 			tokenizer=tokenizer,
 			token_features=token_features,
 			misconception_token_features=misconception_token_features,
