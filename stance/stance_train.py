@@ -37,6 +37,7 @@ if __name__ == '__main__':
 	parser.add_argument('-ip', '--irony_path', default=None)
 	parser.add_argument('-tp', '--token_feature_path', default=None)
 	parser.add_argument('-mtp', '--misconception_token_feature_path', default=None)
+	parser.add_argument('-mti', '--misconception_info_path', default=None)
 	parser.add_argument('-hs', '--num_semantic_hops', default=3, type=int)
 	parser.add_argument('-he', '--num_emotion_hops', default=1, type=int)
 	parser.add_argument('-hl', '--num_lexical_hops', default=1, type=int)
@@ -145,6 +146,14 @@ if __name__ == '__main__':
 			misconception_token_features = json.load(f)
 		logging.info(f'Loaded token features.')
 
+	mis_info = None
+	if args.misconception_info_path is not None:
+		logging.info(f'Loading misconception info: {args.misconception_info_path}')
+		with open(args.misconception_info_path, 'r') as f:
+			mis_info = json.load(f)
+
+		logging.info(f'Loaded misconception info.')
+
 	train_dataset = StanceDataset(
 		documents=train_data,
 		hera_documents=hera_data,
@@ -161,6 +170,7 @@ if __name__ == '__main__':
 		num_semantic_hops=args.num_semantic_hops,
 		num_emotion_hops=args.num_emotion_hops,
 		num_lexical_hops=args.num_lexical_hops,
+		mis_info=mis_info,
 	)
 
 	val_dataset = StanceDataset(
@@ -177,6 +187,7 @@ if __name__ == '__main__':
 		num_semantic_hops=args.num_semantic_hops,
 		num_emotion_hops=args.num_emotion_hops,
 		num_lexical_hops=args.num_lexical_hops,
+		mis_info=mis_info,
 	)
 
 	logging.info(f'train={len(train_dataset)}, val={len(val_dataset)}')

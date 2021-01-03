@@ -197,6 +197,7 @@ class StanceDataset(Dataset):
 			tokenizer=None,
 			token_features=None, misconception_token_features=None,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
+			mis_info=None,
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)

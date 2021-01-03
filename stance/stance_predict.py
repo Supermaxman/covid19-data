@@ -35,6 +35,7 @@ if __name__ == '__main__':
 	parser.add_argument('-kr', '--keep_real', default=False, action='store_true')
 	parser.add_argument('-m', '--mode', default='stance')
 	parser.add_argument('-mp', '--misconceptions_path', default='data/misconceptions.json')
+	parser.add_argument('-mti', '--misconception_info_path', default=None)
 	parser.add_argument('-sp', '--sentiment_path', default=None)
 	parser.add_argument('-ep', '--emotion_path', default=None)
 	parser.add_argument('-ip', '--irony_path', default=None)
@@ -151,6 +152,14 @@ if __name__ == '__main__':
 			misconception_token_features = json.load(f)
 		logging.info(f'Loaded token features.')
 
+	mis_info = None
+	if args.misconception_info_path is not None:
+		logging.info(f'Loading misconception info: {args.misconception_info_path}')
+		with open(args.misconception_info_path, 'r') as f:
+			mis_info = json.load(f)
+
+		logging.info(f'Loaded misconception info.')
+
 	if args.mode == 'stance':
 		logging.info('Loading stance dataset...')
 		eval_dataset = StanceDataset(
@@ -167,6 +176,7 @@ if __name__ == '__main__':
 			num_semantic_hops=args.num_semantic_hops,
 			num_emotion_hops=args.num_emotion_hops,
 			num_lexical_hops=args.num_lexical_hops,
+			mis_info=mis_info,
 			labeled=False
 		)
 	elif args.mode == 'retrieval':

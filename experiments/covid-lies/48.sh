@@ -8,6 +8,7 @@ RUN_NAME=HLTRI_COVID_LIES_STANCE
 # collection
 DATASET=covid-lies
 NUM_STANCE_SPLITS=5
+CREATE_SPLIT=false
 SPLIT_TYPE=normal_unique
 
 # major hyper-parameters for system
@@ -18,7 +19,6 @@ STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
 
 STANCE_NUM_GPUS=1
-CREATE_SPLIT=false
 TRAIN_STANCE=true
 RUN_STANCE=true
 EVAL_STANCE=true
@@ -39,6 +39,16 @@ DATASET_PATH=data
 ARTIFACTS_PATH=artifacts/${DATASET}
 STANCE_SPLIT_FILES=""
 
+# trap ctrl+c to free GPUs
+handler()
+{
+    echo "Experiment aborted."
+    echo "Freeing ${STANCE_NUM_GPUS} GPUs: ${STANCE_GPUS}"
+    python gpu/free_gpus.py -i ${STANCE_GPUS}
+    exit -1
+}
+trap handler SIGINT
+
 if [[ ${CREATE_SPLIT} = true ]]; then
     echo "Creating ${SPLIT_TYPE} splits..."
     python stance/create_split.py -i ${DATASET_PATH}/downloaded_tweets_labeled.jsonl -o ${DATASET_PATH} -t ${SPLIT_TYPE}
@@ -48,21 +58,19 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${TRAIN_STANCE} = true ]]; then
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
+          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --model_type lm \
           --num_semantic_hops 1 \
           --num_emotion_hops 1 \
           --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
           --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
           --batch_size ${STANCE_BATCH_SIZE} \
           --learning_rate 5e-5 \
-          --epochs 10 \
+          --epochs 20 \
           --fine_tune \
           --gpus ${STANCE_TRAIN_GPUS}
     fi
@@ -70,15 +78,13 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
+          --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --model_type lm \
           --num_semantic_hops 1 \
           --num_emotion_hops 1 \
           --token_feature_path ${DATASET_PATH}/downloaded_tweets_tokens.json \
           --misconception_token_feature_path ${DATASET_PATH}/misconception_tokens.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
-          --sentiment_path ${DATASET_PATH}/downloaded_tweets_sentiment.json \
-          --emotion_path ${DATASET_PATH}/downloaded_tweets_emotion.json \
-          --irony_path ${DATASET_PATH}/downloaded_tweets_irony.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
           --output_path ${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
@@ -95,6 +101,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     STANCE_SPLIT_FILES="${STANCE_SPLIT_FILES},${ARTIFACTS_PATH}/${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID}/predictions.stance"
 done
 
+echo "Freeing ${STANCE_NUM_GPUS} GPUs: ${STANCE_GPUS}"
 python gpu/free_gpus.py -i ${STANCE_GPUS}
 
 if [[ ${EVAL_STANCE} = true ]]; then
