@@ -50,10 +50,9 @@ def load_dataset(split_path, dataset_args, name):
 
 class StanceBatchCollator(object):
 	def __init__(
-			self, tokenizer, max_seq_len: int, force_max_seq_len: bool,
+			self, max_seq_len: int, force_max_seq_len: bool,
 			labeled=True):
 		super().__init__()
-		self.tokenizer = tokenizer
 		self.max_seq_len = max_seq_len
 		self.force_max_seq_len = force_max_seq_len
 		self.labeled = labeled

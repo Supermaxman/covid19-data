@@ -11,11 +11,9 @@ from pytorch_lightning import loggers as pl_loggers
 from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, \
 	CovidTwitterEmbeddingStanceModel, CovidTwitterPoolingStanceModel, CovidTwitterReducedPoolingStanceModel, \
 	CovidTwitterReducedStancePoolingStanceModel
-from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset
+from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset, load_dataset
 
 import torch
-import pickle
-import urllib.parse
 
 
 if __name__ == '__main__':
@@ -200,16 +198,12 @@ if __name__ == '__main__':
 			mis_info=mis_info,
 			add_mis_info=args.add_mis_info,
 		)
-		eval_cache_path = args.split_path + '_val_' + urllib.parse.quote(str(eval_dataset_args))
-		if os.path.exists(eval_cache_path):
-			with open(eval_cache_path, 'rb') as f:
-				eval_dataset = pickle.load(f)
-		else:
-			eval_dataset = StanceDataset(
-				**eval_dataset_args
-			)
-			with open(eval_cache_path, 'wb') as f:
-				pickle.dump(eval_dataset, f)
+		eval_dataset = load_dataset(
+			args.split_path,
+			eval_dataset_args,
+			name='val'
+		)
+
 		# eval_dataset = StanceDataset(
 		# 	documents=eval_data,
 		# 	sentiment_preds=sentiment_preds,
@@ -250,7 +244,6 @@ if __name__ == '__main__':
 		shuffle=False,
 		num_workers=num_workers,
 		collate_fn=StanceBatchCollator(
-			tokenizer,
 			args.max_seq_len,
 			args.use_tpus,
 			labeled=False
@@ -368,7 +361,7 @@ if __name__ == '__main__':
 			logger=logger,
 			tpu_cores=tpu_cores,
 			default_root_dir=save_directory,
-			max_epochs=0,
+			max_epochs=args.epochs,
 			precision=precision,
 			deterministic=deterministic,
 			checkpoint_callback=False,

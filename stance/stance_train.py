@@ -14,9 +14,6 @@ from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get
 from data_utils import StanceDataset, StanceBatchCollator, load_dataset
 
 import torch
-import urllib.parse
-import pickle
-
 
 
 if __name__ == '__main__':
@@ -236,7 +233,6 @@ if __name__ == '__main__':
 		shuffle=True,
 		num_workers=num_workers,
 		collate_fn=StanceBatchCollator(
-			tokenizer,
 			args.max_seq_len,
 			args.use_tpus
 		)
@@ -247,7 +243,6 @@ if __name__ == '__main__':
 		shuffle=False,
 		num_workers=num_workers,
 		collate_fn=StanceBatchCollator(
-			tokenizer,
 			args.max_seq_len,
 			args.use_tpus
 		)
@@ -360,7 +355,7 @@ if __name__ == '__main__':
 			logger=logger,
 			tpu_cores=tpu_cores,
 			default_root_dir=save_directory,
-			max_epochs=0,
+			max_epochs=args.epochs,
 			precision=precision,
 			deterministic=deterministic,
 			checkpoint_callback=False,
