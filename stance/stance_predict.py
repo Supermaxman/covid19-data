@@ -59,6 +59,7 @@ if __name__ == '__main__':
 	parser.add_argument('-grd', '--gcn_repr_dp', default=0.0, type=float)
 	parser.add_argument('-wd', '--weight_decay', default=0.0, type=float)
 	parser.add_argument('-gcv', '--gradient_clip_val', default=1.0, type=float)
+	parser.add_argument('-th', '--threshold', default=0.2, type=float)
 
 	args = parser.parse_args()
 
@@ -269,6 +270,7 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -286,6 +288,7 @@ if __name__ == '__main__':
 			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -303,6 +306,7 @@ if __name__ == '__main__':
 			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -321,6 +325,7 @@ if __name__ == '__main__':
 			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -340,6 +345,7 @@ if __name__ == '__main__':
 			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -356,6 +362,7 @@ if __name__ == '__main__':
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
 			embedding_size=args.embedding_size,
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -371,6 +378,7 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -386,6 +394,7 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path
@@ -401,6 +410,7 @@ if __name__ == '__main__':
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
+			threshold=args.threshold,
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
 			predict_path=args.output_path

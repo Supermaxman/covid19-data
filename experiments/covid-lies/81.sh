@@ -59,12 +59,15 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${TRAIN_STANCE} = true ]]; then
         echo "Training split ${SPLIT} stance model..."
         python stance/stance_train.py \
-          --model_type lm-gcn-expanded-dp \
+          --model_type lm-gcn-expanded-dp-joint \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 64 \
+          --gcn_size 512 \
           --gcn_depth 6 \
-          --gcn_dp 0.3 \
+          --gcn_dp 0.2 \
+          --gcn_repr_dp 0.1 \
+          --weight_decay 0.1 \
+          --gradient_clip_val 0.0 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
@@ -75,18 +78,22 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --learning_rate 5e-4 \
           --epochs 10 \
           --fine_tune \
+          --threshold ${STANCE_THRESHOLD} \
           --gpus ${STANCE_TRAIN_GPUS}
     fi
 
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --model_type lm-gcn-expanded-dp \
+          --model_type lm-gcn-expanded-dp-joint \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 64 \
+          --gcn_size 512 \
           --gcn_depth 6 \
-          --gcn_dp 0.3 \
+          --gcn_dp 0.2 \
+          --gcn_repr_dp 0.1 \
+          --weight_decay 0.1 \
+          --gradient_clip_val 0.0 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
@@ -96,6 +103,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
           --batch_size ${STANCE_BATCH_SIZE} \
           --load_trained_model \
+          --threshold ${STANCE_THRESHOLD} \
           --gpus ${STANCE_EVAL_GPUS} \
         ; \
         python stance/format_stance_predictions.py \

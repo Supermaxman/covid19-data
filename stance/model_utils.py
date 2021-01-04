@@ -15,7 +15,7 @@ from gcn_layers import GraphConvolution, GraphAttention, TransformerGraphAttenti
 class BaseCovidTwitterStanceModel(pl.LightningModule):
 	def __init__(
 			self, pre_model_name, learning_rate, weight_decay, lr_warmup, updates_total,
-			weight_factor=1.0,
+			weight_factor=1.0, threshold=0.2,
 			torch_cache_dir=None, predict_mode=False, predict_path=None, load_pretrained=False
 	):
 		super().__init__()
@@ -26,6 +26,7 @@ class BaseCovidTwitterStanceModel(pl.LightningModule):
 		self.lr_warmup = lr_warmup
 		self.updates_total = updates_total
 		self.weight_factor = weight_factor
+		self.threshold = threshold
 		self.predict_mode = predict_mode
 		self.predict_path = predict_path
 		self.load_pretrained = load_pretrained
@@ -187,7 +188,10 @@ class BaseCovidTwitterStanceModel(pl.LightningModule):
 			logits = torch.cat([x[f'{name}_batch_logits'] for x in outputs], dim=0)
 			labels = torch.cat([x[f'{name}_batch_labels'] for x in outputs], dim=0)
 
-			threshold_range = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+			if self.threshold is None:
+				threshold_range = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+			else:
+				threshold_range = [self.threshold]
 			max_metric = float('-inf')
 			max_metrics = {}
 			for threshold in threshold_range:
