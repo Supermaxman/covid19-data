@@ -208,7 +208,7 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer):
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
-	t_align_map = align_tokens(t_tokens, wpt_tokens, offset=m_offset-1)
+	t_align_map = align_tokens(t_tokens, wpt_tokens, offset=m_offset+1)
 	print('m align mapping')
 	for key, value in m_align_map.items():
 		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
