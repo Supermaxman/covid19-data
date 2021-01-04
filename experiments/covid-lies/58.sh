@@ -72,7 +72,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
           --batch_size ${STANCE_BATCH_SIZE} \
           --learning_rate 5e-5 \
-          --epochs 20 \
+          --epochs 10 \
           --fine_tune \
           --gpus ${STANCE_TRAIN_GPUS}
     fi
