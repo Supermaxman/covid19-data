@@ -449,6 +449,12 @@ class StanceDataset(Dataset):
 						if sub_token_idx is not None:
 							mapping.append((i, sub_token_idx))
 					print(mapping)
+					mapping = []
+					for i in range(len(m_text + tweet_text)):
+						sub_token_idx = token_data.char_to_token(1, i)
+						if sub_token_idx is not None:
+							mapping.append((i, sub_token_idx))
+					print(mapping)
 					ex = {
 						'id': tweet_id,
 						'text': tweet_text,
