@@ -207,7 +207,7 @@ def align_tokens(tokens, wpt_tokens, offset=0):
 
 def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 	m_align_map, t_offset = align_tokens(m_tokens, wpt_tokens)
-	t_align_map, _ = align_tokens(t_tokens, wpt_tokens, offset=t_offset+1)
+	t_align_map, _ = align_tokens(t_tokens, wpt_tokens, offset=t_offset-1)
 
 	align_map = {**m_align_map, **t_align_map}
 	print('align mapping')
