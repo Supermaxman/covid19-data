@@ -439,6 +439,10 @@ class CovidTwitterGCNStanceModel(BaseCovidTwitterStanceModel):
 			}
 		)
 
+		self.dropout = nn.Dropout(
+			p=self.config.hidden_dropout_prob
+		)
+
 		self.classifiers = nn.ModuleDict(
 			{
 				f'{stance_idx}_classifier': nn.Linear(
