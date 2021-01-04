@@ -13,7 +13,7 @@ SPLIT_TYPE=normal_unique
 
 # major hyper-parameters for system
 STANCE_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-STANCE_THRESHOLD=0.1
+STANCE_THRESHOLD=0.4
 
 STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
@@ -72,8 +72,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --max_seq_len ${STANCE_MAX_SEQ_LEN} \
           --batch_size ${STANCE_BATCH_SIZE} \
           --learning_rate 5e-4 \
-          --epochs 10 \
-          --stop_epochs 8 \
+          --epochs 8 \
           --fine_tune \
           --gpus ${STANCE_TRAIN_GPUS}
     fi
