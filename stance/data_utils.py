@@ -478,13 +478,31 @@ class StanceDataset(Dataset):
 						import sys
 						np.set_printoptions(threshold=sys.maxsize)
 						print('semantic_edges')
-						print([i for i in range(len(ex['edges']['semantic'])) if ex['edges']['semantic'][i] > 0])
+						for i in range(len(ex['edges']['semantic'])):
+							adj_list = []
+							for j in range(len(ex['edges']['semantic'])):
+								if ex['edges']['semantic'][i, j] > 0:
+									adj_list.append(j)
+							if len(adj_list) > 0:
+								print(f'{i} -> {adj_list}')
 						input()
 						print('emotion_edges')
-						print([i for i in range(len(ex['edges']['emotion'])) if ex['edges']['emotion'][i] > 0])
+						for i in range(len(ex['edges']['emotion'])):
+							adj_list = []
+							for j in range(len(ex['edges']['emotion'])):
+								if ex['edges']['emotion'][i, j] > 0:
+									adj_list.append(j)
+							if len(adj_list) > 0:
+								print(f'{i} -> {adj_list}')
 						input()
 						print('lexical_edges')
-						print([i for i in range(len(ex['edges']['lexical'])) if ex['edges']['lexical'][i] > 0])
+						for i in range(len(ex['edges']['lexical'])):
+							adj_list = []
+							for j in range(len(ex['edges']['lexical'])):
+								if ex['edges']['lexical'][i, j] > 0:
+									adj_list.append(j)
+							if len(adj_list) > 0:
+								print(f'{i} -> {adj_list}')
 						input()
 						print()
 
