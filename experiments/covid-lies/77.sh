@@ -65,6 +65,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --gcn_size 64 \
           --gcn_depth 6 \
           --gcn_type attention \
+          --weight_factor 2.0 \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
@@ -86,6 +87,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --gcn_size 64 \
           --gcn_depth 6 \
           --gcn_type attention \
+          --weight_factor 2.0 \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
