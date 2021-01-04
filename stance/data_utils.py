@@ -209,21 +209,8 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
 	t_align_map = align_tokens(t_tokens, wpt_tokens, seq_offset=1)
-	print('m align mapping')
-	for key, value in m_align_map.items():
-		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
-	input()
-	print('t align mapping')
-	for key, value in t_align_map.items():
-		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
-	input()
 	align_map = {**m_align_map, **t_align_map}
-	print('align mapping')
-	for key, value in align_map.items():
-		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
-	input()
-	t_map = {}
-	token_map = {}
+	aligned_tokens = []
 	for sub_token_idx in range(len(wpt_tokens['input_ids'])):
 		if sub_token_idx not in align_map:
 			# CLS, SEP, or other special token
@@ -232,18 +219,14 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 				'dep': 'NONE',
 				'head': 'NONE',
 				'sentic': None,
-				'text': '[CLS]' if sub_token_idx == 0 else '[SEP]'
+				'text': '[CLS]' if sub_token_idx == 0 else '[SEP]',
+				'wpt_idxs': {sub_token_idx}
 			}
 			align_map[sub_token_idx] = aligned_token
 		aligned_token = align_map[sub_token_idx]
-		# reverse_map[aligned_token['text']].append(sub_token_idx)
-		# token_map[aligned_token['text']] = aligned_token
-	print('align mapping')
-	for key, value in align_map.items():
-		print(f'{key} -> {value["text"]}')
-	input()
+		aligned_tokens.append(aligned_token)
 
-	return t_map, reverse_map, token_map
+	return align_map, aligned_tokens
 
 
 def create_adjacency_matrix(edges, size, t_map, r_map):
@@ -259,31 +242,34 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 
 def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops):
 	seq_len = len(wpt_tokens['input_ids'])
-	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
+	align_map, a_tokens = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
 
-	semantic_edges = {}
-	emotion_edges = {}
+	semantic_edges = defaultdict(set)
+	emotion_edges = defaultdict(set)
 	reverse_emotion_edges = defaultdict(set)
-	lexical_edges = {}
+	lexical_edges = defaultdict(set)
 	root_text = None
-
-	for token_text, token in token_map.items():
-		text = token_text
+	r_map = defaultdict(set)
+	t_map = {}
+	for token in a_tokens:
+		text = token['text'].lower()
+		head = token['head'].lower()
+		for wpt_idx in token['wpt_idxs']:
+			t_map[wpt_idx] = text
+			r_map[text].add(wpt_idx)
 		# TODO add as features
 		pos = token['pos']
 		dep = token['dep']
-		head = token['head']
+		# TODO will be two roots with two sequences
 		if dep == 'ROOT':
 			root_text = text
 		sentic = token['sentic']
-		if sentic is None:
-			semantic_edges[text] = set()
-			emotion_edges[text] = set()
-		else:
-			semantic_edges[text] = set(sentic['semantics'])
+		if sentic is not None:
+			semantic_edges[text].add(sentic['semantics'])
 			for i in range(num_semantic_hops-1):
 				semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
-			emotion_edges[text] = {sentic['primary_mood'], sentic['secondary_mood']}
+			emotion_edges[text].add(sentic['primary_mood'])
+			emotion_edges[text].add(sentic['secondary_mood'])
 			reverse_emotion_edges[sentic['primary_mood']].add(text)
 			reverse_emotion_edges[sentic['secondary_mood']].add(text)
 
@@ -295,10 +281,10 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 			# 	for emotion in new_emotions:
 			# 		emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
 
-		lexical_edges[text] = {head}
+		lexical_edges[text].add(head)
 
-	lexical_edges['[CLS]'] = {root_text}
-	lexical_edges['[SEP]'] = {root_text}
+	lexical_edges['[CLS]'].add(root_text)
+	lexical_edges['[SEP]'].add(root_text)
 
 	# TODO implement num_lexical_hops and emotion_hops
 	# TODO issue with emotion hops: requires reverse emotion -> all tokens, really slow to compute > 1 hop
