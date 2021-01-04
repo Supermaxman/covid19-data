@@ -212,6 +212,7 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 	align_map = {**m_align_map, **t_align_map}
 	reverse_map = defaultdict(list)
 	t_map = {}
+	token_map = {}
 	for key, values in m_reverse_map.items():
 		reverse_map[key].extend(values)
 	for key, values in t_reverse_map.items():
@@ -227,9 +228,11 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 				'text': '[CLS]' if sub_token_idx == 0 else '[SEP]'
 			}
 			align_map[sub_token_idx] = aligned_token
-			reverse_map[aligned_token['text']].append(sub_token_idx)
-			t_map[sub_token_idx] = aligned_token['text']
-	return t_map, reverse_map
+		aligned_token = align_map[sub_token_idx]
+		reverse_map[aligned_token['text']].append(sub_token_idx)
+		token_map[aligned_token['text']] = aligned_token
+		t_map[sub_token_idx] = aligned_token['text']
+	return t_map, reverse_map, token_map
 
 
 def create_adjacency_matrix(edges, size, t_map, r_map):
@@ -245,7 +248,7 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 
 def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops):
 	seq_len = len(wpt_tokens['input_ids'])
-	t_map, r_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
+	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
 
 	semantic_edges = {}
 	emotion_edges = {}
@@ -253,8 +256,8 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 	lexical_edges = {}
 	root_text = None
 
-	for token in r_map.keys():
-		text = token['text']
+	for token_text, token in token_map.items():
+		text = token_text
 		# TODO add as features
 		pos = token['pos']
 		dep = token['dep']
