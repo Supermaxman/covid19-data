@@ -830,7 +830,7 @@ class CovidTwitterReducedStancePoolingStanceModel(BaseCovidTwitterStanceModel):
 			)
 			self.sentiment_pooling = ReducedCrossAttentionPooling(
 				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=0.0
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_sentiment = True
@@ -845,7 +845,7 @@ class CovidTwitterReducedStancePoolingStanceModel(BaseCovidTwitterStanceModel):
 			)
 			self.emotion_pooling = ReducedCrossAttentionPooling(
 				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=0.0
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_emotion = True
@@ -860,7 +860,7 @@ class CovidTwitterReducedStancePoolingStanceModel(BaseCovidTwitterStanceModel):
 			)
 			self.irony_pooling = ReducedCrossAttentionPooling(
 				hidden_size=self.config.hidden_size,
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=0.0
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_irony = True
@@ -873,7 +873,7 @@ class CovidTwitterReducedStancePoolingStanceModel(BaseCovidTwitterStanceModel):
 
 		self.stance_pooling = ReducedAttentionPooling(
 			hidden_size=self.config.hidden_size,
-			dropout_prob=self.config.hidden_dropout_prob
+			dropout_prob=0.0
 		)
 
 		self.classifiers = nn.ModuleDict(
