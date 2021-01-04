@@ -61,7 +61,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --model_type lm-gcn \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 512 \
+          --gcn_size 1024 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
@@ -78,7 +78,11 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --model_type lm-pool-reduced \
+          --model_type lm-gcn \
+          --create_edge_features \
+          --graph_names semantic,emotion,lexical \
+          --gcn_size 1024 \
+          --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
