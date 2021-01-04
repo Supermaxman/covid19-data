@@ -314,16 +314,6 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 		r_map=r_map
 	)
 
-	# # CLS token is connected to everything
-	# semantic_adj[:, 0] = 1.0
-	# semantic_adj[0, :] = 1.0
-	# # CLS token is connected to everything
-	# emotion_adj[:, 0] = 1.0
-	# emotion_adj[0, :] = 1.0
-	# # CLS token is connected to everything
-	# lexical_adj[:, 0] = 1.0
-	# lexical_adj[0, :] = 1.0
-
 	edges = {
 		'semantic': semantic_adj,
 		'emotion': emotion_adj,

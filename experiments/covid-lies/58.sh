@@ -63,7 +63,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
           --gcn_size 1024 \
-          --gcn_depth 1 \
+          --gcn_depth 3 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
@@ -84,7 +84,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
           --gcn_size 1024 \
-          --gcn_depth 1 \
+          --gcn_depth 3 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \

@@ -359,9 +359,9 @@ class CovidTwitterStanceModel(BaseCovidTwitterStanceModel):
 		return logits
 
 
-class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
+class CovidTwitterGCNStanceModel(BaseCovidTwitterStanceModel):
 	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, *args, **kwargs):
-		super().__init__(classifier_feature_sizes=gcn_size * len(graph_names), *args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
 		if self.config.hidden_size != gcn_size:
@@ -419,6 +419,36 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 		else:
 			raise ValueError(f'Unknown gcn_type: {self.gcn_type}')
 
+		self.gcn_stance_embeddings = nn.ModuleDict(
+			{
+				f'{graph_name}_embeddings': nn.Embedding(
+					num_embeddings=3,
+					embedding_dim=gcn_size
+				)
+				for graph_name in self.graph_names
+			}
+		)
+
+		self.gcn_stance_pooling = nn.ModuleDict(
+			{
+				f'{graph_name}_pooling': AttentionPooling(
+					hidden_size=gcn_size,
+					dropout_prob=self.config.hidden_dropout_prob
+				)
+				for graph_name in self.graph_names
+			}
+		)
+
+		self.classifiers = nn.ModuleDict(
+			{
+				f'{stance_idx}_classifier': nn.Linear(
+					(gcn_size * len(self.graph_names)),
+					1
+				)
+				for stance_idx in range(3)
+			}
+		)
+
 	def forward(self, input_ids, attention_mask, token_type_ids, batch):
 		if self.freeze_lm:
 			with torch.no_grad():
@@ -434,41 +464,7 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 				token_type_ids=token_type_ids
 			)
 		embedding_output = outputs[0]
-		cls_output = embedding_output[:, 0]
-		# TODO alternative to cls, consider stance embedding attention pooling + separate classification representations
-		classifier_inputs = [cls_output]
-		if self.has_sentiment:
-			s_embeddings = self.sentiment_embeddings(batch['sentiment_ids'])
-			# [bsize, emb_size]
-			s_outputs = self.sentiment_pooling(
-				hidden_states=embedding_output,
-				queries=s_embeddings,
-				query_probs=batch['sentiment_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(s_outputs)
-		if self.has_emotion:
-			e_embeddings = self.emotion_embeddings(batch['emotion_ids'])
-			# [bsize, emb_size]
-			e_outputs = self.emotion_pooling(
-				hidden_states=embedding_output,
-				queries=e_embeddings,
-				query_probs=batch['emotion_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(e_outputs)
-
-		if self.has_irony:
-			i_embeddings = self.irony_embeddings(batch['irony_ids'])
-			# [bsize, emb_size]
-			i_outputs = self.irony_pooling(
-				hidden_states=embedding_output,
-				queries=i_embeddings,
-				query_probs=batch['irony_scores'],
-				attention_mask=attention_mask
-			)
-			classifier_inputs.append(i_outputs)
-
+		classifier_inputs = []
 		for graph_name in self.graph_names:
 			if self.gcn_projs is not None:
 				gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
@@ -480,13 +476,28 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 				gcn_output_d = self.gcns[f'{graph_name}_{d}_gcn'](gcn_input_d, gcn_edges)
 				gcn_input_d = gcn_output_d
 			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size]
-			# TODO better GCN pooling
-			gcn_output_pool = gcn_input_d.mean(dim=-2)
-			classifier_inputs.append(gcn_output_pool)
+			# gcn_output_pool = gcn_input_d.mean(dim=-2)
+			# [bsize, 3, emb_size]
+			gcn_stance_embs = self.gcn_stance_embeddings[f'{graph_name}_embeddings'](batch['stance_ids'])
+			# [bsize, 3, emb_size]
+			gcn_stance_pool_embs = self.gcn_stance_pooling[f'{graph_name}_pooling'](
+					hidden_states=gcn_input_d,
+					queries=gcn_stance_embs,
+					attention_mask=attention_mask
+			)
 
+			classifier_inputs.append(gcn_stance_pool_embs)
+		# [bsize, 3, emb_size * num_graphs]
 		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
 		classifier_inputs = self.dropout(classifier_inputs)
-		logits = self.classifier(classifier_inputs)
+		logits = []
+		for stance_idx in range(3):
+			# [bsize, emb_size * num_graphs]
+			stance_idx_classifier_input = classifier_inputs[:, stance_idx]
+			# [bsize, 1]
+			stance_idx_logits = self.classifiers[f'{stance_idx}_classifier'](stance_idx_classifier_input)
+			logits.append(stance_idx_logits)
+		logits = torch.cat(logits, dim=-1)
 		return logits
 
 
