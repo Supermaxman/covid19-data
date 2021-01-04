@@ -370,6 +370,8 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 					f'{graph_name}_proj': nn.Linear(self.config.hidden_size, gcn_size) for graph_name in self.graph_names
 				}
 			)
+		else:
+			self.gcn_projs = None
 
 		self.gcn_type = gcn_type.lower()
 		# TODO semantic graph, emotion graph, dependency parse graph all possible
