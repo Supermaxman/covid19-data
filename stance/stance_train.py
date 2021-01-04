@@ -48,6 +48,7 @@ if __name__ == '__main__':
 	parser.add_argument('-flm', '--freeze_lm', default=False, action='store_true')
 	parser.add_argument('-ami', '--add_mis_info', default=False, action='store_true')
 	parser.add_argument('-gs', '--gcn_size', default=100, type=int)
+	parser.add_argument('-gd', '--gcn_depth', default=1, type=int)
 	parser.add_argument('-es', '--embedding_size', default=100, type=int)
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
@@ -260,6 +261,7 @@ if __name__ == '__main__':
 		model = CovidTwitterGCNStanceModel(
 			freeze_lm=args.freeze_lm,
 			gcn_size=args.gcn_size,
+			gcn_depth=args.gcn_depth,
 			gcn_type=args.gcn_type,
 			pre_model_name=args.pre_model_name,
 			learning_rate=args.learning_rate,

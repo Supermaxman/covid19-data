@@ -360,7 +360,7 @@ class CovidTwitterStanceModel(BaseCovidTwitterStanceModel):
 
 
 class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
-	def __init__(self, freeze_lm, gcn_size, gcn_type, graph_names, *args, **kwargs):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, *args, **kwargs):
 		super().__init__(classifier_feature_sizes=gcn_size * len(graph_names), *args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
@@ -373,42 +373,47 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 		else:
 			self.gcn_projs = None
 
+		self.gcn_size = gcn_size
 		self.gcn_type = gcn_type.lower()
+		self.gcn_depth = gcn_depth
 		# TODO semantic graph, emotion graph, dependency parse graph all possible
 		# TODO consider modeling together in same graph or in different graphs
 		# TODO different edge types?
 		# TODO implement multiple layers?
+		gcn_layer_names = []
+		for graph_name in self.graph_names:
+			for d in range(self.gcn_depth):
+				gcn_layer_names.append(f'{graph_name}_{d}')
 		if self.gcn_type == 'convolution':
 			self.gcns = nn.ModuleDict(
 				{
-					f'{graph_name}_gcn': GraphConvolution(
+					f'{layer_name}_gcn': GraphConvolution(
 						in_features=gcn_size,
 						out_features=gcn_size
-					) for graph_name in self.graph_names
+					) for layer_name in gcn_layer_names
 				}
 			)
-
 		elif self.gcn_type == 'attention':
 			self.gcns = nn.ModuleDict(
 				{
-					f'{graph_name}_gcn': GraphAttention(
+					f'{layer_name}_gcn': GraphAttention(
 						in_features=gcn_size,
 						out_features=gcn_size,
 						dropout=self.config.hidden_dropout_prob,
 						alpha=0.2,
 						concat=True
-					) for graph_name in self.graph_names
+					) for layer_name in gcn_layer_names
 				}
 			)
 		elif self.gcn_type == 'transformer':
 			self.gcns = nn.ModuleDict(
 				{
-					f'{graph_name}_gcn': TransformerGraphAttention(
+					f'{layer_name}_gcn': TransformerGraphAttention(
 						in_features=gcn_size,
 						out_features=gcn_size,
 						dropout_prob=self.config.hidden_dropout_prob,
 						activation=True
-					) for graph_name in self.graph_names
+					) for layer_name in gcn_layer_names
 				}
 			)
 		else:
@@ -470,10 +475,13 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 			else:
 				gcn_ctx_input = embedding_output
 			gcn_edges = batch[f'{graph_name}_edges']
-			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
+			gcn_input_d = gcn_ctx_input
+			for d in range(self.gcn_depth):
+				gcn_output_d = self.gcns[f'{graph_name}_{d}_gcn'](gcn_input_d, gcn_edges)
+				gcn_input_d = gcn_output_d
 			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size]
 			# TODO better GCN pooling
-			gcn_output_pool = gcn_output.mean(dim=-2)
+			gcn_output_pool = gcn_input_d.mean(dim=-2)
 			classifier_inputs.append(gcn_output_pool)
 
 		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
