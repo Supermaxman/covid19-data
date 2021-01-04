@@ -237,7 +237,7 @@ class StanceDataset(Dataset):
 						m_type = m_info['type']
 						m_theme = m_info['theme']
 						m_threat = m_info['threat']
-						# TODO add type, theme, threat info
+						m_text = f'{m_text} (type: {m_type} theme: {m_theme} threat: {m_threat})'
 
 					token_data = tokenizer(
 						m_text,

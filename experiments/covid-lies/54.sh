@@ -60,7 +60,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_train.py \
           --model_type lm \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
-          --add_misconception_info \
+          --add_mis_info \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
@@ -77,7 +77,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_predict.py \
           --model_type lm \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
-          --add_misconception_info \
+          --add_mis_info \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
           --pre_model_name ${STANCE_PRE_MODEL_NAME} \
           --model_name stance-${DATASET}-${RUN_NAME}_SPLIT_${SPLIT}_${RUN_ID} \
