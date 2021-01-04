@@ -4,7 +4,7 @@ import json
 import argparse
 import logging
 import pytorch_lightning as pl
-from transformers import BertTokenizer
+from transformers import BertTokenizerFast
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
@@ -40,8 +40,6 @@ if __name__ == '__main__':
 	parser.add_argument('-csp', '--coaid_sentiment_path', default=None)
 	parser.add_argument('-cep', '--coaid_emotion_path', default=None)
 	parser.add_argument('-cip', '--coaid_irony_path', default=None)
-	parser.add_argument('-tp', '--token_feature_path', default=None)
-	parser.add_argument('-mtp', '--misconception_token_feature_path', default=None)
 	parser.add_argument('-mti', '--misconception_info_path', default=None)
 	parser.add_argument('-hs', '--num_semantic_hops', default=3, type=int)
 	parser.add_argument('-he', '--num_emotion_hops', default=1, type=int)
@@ -53,6 +51,7 @@ if __name__ == '__main__':
 	parser.add_argument('-es', '--embedding_size', default=100, type=int)
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
+	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
 
 	args = parser.parse_args()
 
@@ -90,7 +89,8 @@ if __name__ == '__main__':
 
 	logging.info(f'Loading tokenizer: {args.pre_model_name}')
 	# tokenizer = AutoTokenizer.from_pretrained(args.pre_model_name)
-	tokenizer = BertTokenizer.from_pretrained(args.pre_model_name)
+	# tokenizer = BertTokenizer.from_pretrained(args.pre_model_name)
+	tokenizer = BertTokenizerFast.from_pretrained(args.pre_model_name)
 	logging.info(f'Loading dataset: {args.split_path}')
 
 	with open(args.split_path, 'r') as f:
@@ -162,15 +162,6 @@ if __name__ == '__main__':
 			coaid_irony_preds = json.load(f)
 		logging.info(f'Loaded COAID irony predictions.')
 
-	token_features = None
-	misconception_token_features = None
-	if args.token_feature_path is not None:
-		with open(args.token_feature_path, 'r') as f:
-			token_features = json.load(f)
-		with open(args.misconception_token_feature_path, 'r') as f:
-			misconception_token_features = json.load(f)
-		logging.info(f'Loaded token features.')
-
 	mis_info = None
 	if args.misconception_info_path is not None:
 		logging.info(f'Loading misconception info: {args.misconception_info_path}')
@@ -193,8 +184,7 @@ if __name__ == '__main__':
 		emotion_labels=emotion_labels,
 		irony_labels=irony_labels,
 		tokenizer=tokenizer,
-		token_features=token_features,
-		misconception_token_features=misconception_token_features,
+		create_edge_features=args.create_edge_features,
 		num_semantic_hops=args.num_semantic_hops,
 		num_emotion_hops=args.num_emotion_hops,
 		num_lexical_hops=args.num_lexical_hops,
@@ -214,8 +204,7 @@ if __name__ == '__main__':
 		emotion_labels=emotion_labels,
 		irony_labels=irony_labels,
 		tokenizer=tokenizer,
-		token_features=token_features,
-		misconception_token_features=misconception_token_features,
+		create_edge_features=args.create_edge_features,
 		num_semantic_hops=args.num_semantic_hops,
 		num_emotion_hops=args.num_emotion_hops,
 		num_lexical_hops=args.num_lexical_hops,

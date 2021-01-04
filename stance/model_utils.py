@@ -364,11 +364,12 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 		super().__init__(classifier_feature_sizes=gcn_size * len(graph_names), *args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
-		self.gcn_projs = nn.ModuleDict(
-			{
-				f'{graph_name}_proj': nn.Linear(self.config.hidden_size, gcn_size) for graph_name in self.graph_names
-			}
-		)
+		if self.config.hidden_size != gcn_size:
+			self.gcn_projs = nn.ModuleDict(
+				{
+					f'{graph_name}_proj': nn.Linear(self.config.hidden_size, gcn_size) for graph_name in self.graph_names
+				}
+			)
 
 		self.gcn_type = gcn_type.lower()
 		# TODO semantic graph, emotion graph, dependency parse graph all possible
@@ -462,7 +463,10 @@ class CovidTwitterGCNStanceModel(CovidTwitterStanceModel):
 			classifier_inputs.append(i_outputs)
 
 		for graph_name in self.graph_names:
-			gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
+			if self.gcn_projs is not None:
+				gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
+			else:
+				gcn_ctx_input = embedding_output
 			gcn_edges = batch[f'{graph_name}_edges']
 			gcn_output = self.gcns[f'{graph_name}_gcn'](gcn_ctx_input, gcn_edges)
 			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size]
