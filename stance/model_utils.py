@@ -1,9 +1,9 @@
 
+import pytorch_lightning as pl
 from transformers import BertModel, BertConfig
 from transformers import AdamW, get_linear_schedule_with_warmup
 from torch import nn
 import torch
-import pytorch_lightning as pl
 import torch.distributed as dist
 import os
 import math
@@ -502,6 +502,91 @@ class CovidTwitterGCNStanceModel(BaseCovidTwitterStanceModel):
 			stance_idx_logits = self.classifiers[f'{stance_idx}_classifier'](stance_idx_classifier_input)
 			logits.append(stance_idx_logits)
 		logits = torch.cat(logits, dim=-1)
+		return logits
+
+
+class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.freeze_lm = freeze_lm
+		self.graph_names = graph_names
+		if self.config.hidden_size != gcn_size:
+			self.gcn_projs = nn.ModuleDict(
+				{
+					f'{graph_name}_proj': nn.Linear(self.config.hidden_size, gcn_size) for graph_name in self.graph_names
+				}
+			)
+		else:
+			self.gcn_projs = None
+
+		self.gcn_size = gcn_size
+		self.gcn_type = gcn_type.lower()
+		self.gcn_depth = gcn_depth
+		# TODO semantic graph, emotion graph, dependency parse graph all possible
+		# TODO consider modeling together in same graph or in different graphs
+		# TODO different edge types?
+		# TODO implement multiple layers?
+		gcn_layer_names = []
+		for graph_name in self.graph_names:
+			for d in range(self.gcn_depth):
+				gcn_layer_names.append(f'{graph_name}_{d}')
+
+		self.gcns = nn.ModuleDict(
+			{
+				f'{layer_name}_gcn': GraphAttention(
+					in_features=gcn_size,
+					out_features=gcn_size,
+					dropout=self.config.hidden_dropout_prob,
+					alpha=0.2,
+					concat=True
+				) for layer_name in gcn_layer_names
+			}
+		)
+
+		self.dropout = nn.Dropout(
+			p=self.config.hidden_dropout_prob
+		)
+
+		self.classifier = nn.Linear(
+			len(self.graph_names) * gcn_size,
+			3
+		)
+
+	def forward(self, input_ids, attention_mask, token_type_ids, batch):
+		if self.freeze_lm:
+			with torch.no_grad():
+				outputs = self.bert(
+					input_ids,
+					attention_mask=attention_mask,
+					token_type_ids=token_type_ids
+				)
+		else:
+			outputs = self.bert(
+				input_ids,
+				attention_mask=attention_mask,
+				token_type_ids=token_type_ids
+			)
+		embedding_output = outputs[0]
+		classifier_inputs = []
+		for graph_name in self.graph_names:
+			if self.gcn_projs is not None:
+				gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
+			else:
+				gcn_ctx_input = embedding_output
+			gcn_edges = batch[f'{graph_name}_edges']
+			gcn_input_d = gcn_ctx_input
+			for d in range(self.gcn_depth):
+				gcn_output_d = self.gcns[f'{graph_name}_{d}_gcn'](gcn_input_d, gcn_edges)
+				gcn_input_d = gcn_output_d
+			# [bsize, seq_len] -> [bsize] -> [bsize, 1]
+			counts = attention_mask.float().sum(dim=-1).unsqueeze(dim=-1)
+			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size] / [bsize, 1] -> [bsize, hidden_size]
+			gcn_output_pool = gcn_input_d.sum(dim=-2) / counts
+			classifier_inputs.append(gcn_output_pool)
+		# [bsize, 3, emb_size * num_graphs]
+		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
+		classifier_inputs = self.dropout(classifier_inputs)
+		logits = self.classifier(classifier_inputs)
 		return logits
 
 

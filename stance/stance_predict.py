@@ -8,9 +8,7 @@ from transformers import BertTokenizerFast
 from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
-from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, \
-	CovidTwitterEmbeddingStanceModel, CovidTwitterPoolingStanceModel, CovidTwitterReducedPoolingStanceModel, \
-	CovidTwitterReducedStancePoolingStanceModel
+from model_utils import *
 from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset, load_dataset
 
 import torch
@@ -271,6 +269,22 @@ if __name__ == '__main__':
 		)
 	elif model_type == 'lm-gcn':
 		model = CovidTwitterGCNStanceModel(
+			freeze_lm=args.freeze_lm,
+			gcn_size=args.gcn_size,
+			gcn_depth=args.gcn_depth,
+			gcn_type=args.gcn_type,
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			graph_names=args.graph_names.split(','),
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
+	elif model_type == 'lm-gcn-expanded':
+		model = CovidTwitterGCNExpandedStanceModel(
 			freeze_lm=args.freeze_lm,
 			gcn_size=args.gcn_size,
 			gcn_depth=args.gcn_depth,
