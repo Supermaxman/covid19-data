@@ -188,14 +188,14 @@ def filter_tweet_text(tweet_text):
 	return tweet_text
 
 
-def align_tokens(tokens, wpt_tokens, offset=0):
+def align_tokens(tokens, wpt_tokens, seq_offset=0):
 	align_map = {}
 	for token in tokens:
 		token['wpt_idxs'] = set()
-		start = token['start'] + offset
-		end = token['end'] + offset
+		start = token['start']
+		end = token['end']
 		for char_idx in range(start, end):
-			sub_token_idx = wpt_tokens.char_to_token(char_idx)
+			sub_token_idx = wpt_tokens.char_to_token(char_idx, sequence_index=seq_offset)
 			# White spaces have no token and will return None
 			if sub_token_idx is not None:
 				align_map[sub_token_idx] = token
@@ -203,12 +203,12 @@ def align_tokens(tokens, wpt_tokens, offset=0):
 	return align_map
 
 
-def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer):
+def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 	print([f'{i}:{m}' for i, m in enumerate(wpt_tokens.tokens())])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
-	t_align_map = align_tokens(t_tokens, wpt_tokens)
+	t_align_map = align_tokens(t_tokens, wpt_tokens, seq_offset=1)
 	print('m align mapping')
 	for key, value in m_align_map.items():
 		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
@@ -257,9 +257,9 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 	return adj
 
 
-def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, m_offset, tokenizer):
+def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops):
 	seq_len = len(wpt_tokens['input_ids'])
-	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer)
+	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
 
 	semantic_edges = {}
 	emotion_edges = {}
@@ -443,18 +443,6 @@ class StanceDataset(Dataset):
 						m_text,
 						tweet_text
 					)
-					mapping = []
-					for i in range(len(m_text + tweet_text)):
-						sub_token_idx = token_data.char_to_token(i)
-						if sub_token_idx is not None:
-							mapping.append((i, sub_token_idx))
-					print(mapping)
-					mapping = []
-					for i in range(len(m_text + tweet_text)):
-						sub_token_idx = token_data.char_to_token(i, sequence_index=1)
-						if sub_token_idx is not None:
-							mapping.append((i, sub_token_idx))
-					print(mapping)
 					ex = {
 						'id': tweet_id,
 						'text': tweet_text,
@@ -490,8 +478,6 @@ class StanceDataset(Dataset):
 							num_semantic_hops,
 							num_emotion_hops,
 							num_lexical_hops,
-							m_offset=len(m_text),
-							tokenizer=tokenizer
 						)
 						ex['edges'] = edges
 
