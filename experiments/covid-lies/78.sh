@@ -64,6 +64,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --graph_names semantic,emotion,lexical \
           --gcn_size 64 \
           --gcn_depth 6 \
+          --gcn_dp 0.3 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \
@@ -85,6 +86,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --graph_names semantic,emotion,lexical \
           --gcn_size 64 \
           --gcn_depth 6 \
+          --gcn_dp 0.3 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
           --split_path ${DATASET_PATH}/${SPLIT_TYPE}_split_${SPLIT}.json \

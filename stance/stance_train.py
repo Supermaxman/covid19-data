@@ -52,6 +52,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
 	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
+	parser.add_argument('-gdp', '--gcn_dp', default=0.1, type=float)
 
 	args = parser.parse_args()
 
@@ -304,6 +305,7 @@ if __name__ == '__main__':
 			gcn_size=args.gcn_size,
 			gcn_depth=args.gcn_depth,
 			gcn_type=args.gcn_type,
+			gcn_dp=args.gcn_dp,
 			pre_model_name=args.pre_model_name,
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,

@@ -1064,10 +1064,11 @@ class CovidTwitterReducedStancePoolingStanceModel(BaseCovidTwitterStanceModel):
 
 
 class CovidTwitterGCNExpandedDPStanceModel(BaseCovidTwitterStanceModel):
-	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, *args, **kwargs):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, gcn_dp, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
+		self.gcn_dp = gcn_dp
 		if self.config.hidden_size != gcn_size:
 			self.gcn_projs = nn.ModuleDict(
 				{
@@ -1092,13 +1093,13 @@ class CovidTwitterGCNExpandedDPStanceModel(BaseCovidTwitterStanceModel):
 				self.gcns[layer_name] = GraphAttention(
 					in_features=in_features,
 					out_features=out_features,
-					dropout=self.config.hidden_dropout_prob,
+					dropout=self.gcn_dp,
 					alpha=0.2,
 					concat=True
 				)
 
 		self.dropout = nn.Dropout(
-			p=self.config.hidden_dropout_prob
+			p=self.gcn_dp
 		)
 
 		self.classifier = nn.Linear(
