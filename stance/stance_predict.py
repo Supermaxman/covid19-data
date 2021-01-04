@@ -56,6 +56,7 @@ if __name__ == '__main__':
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
 	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
 	parser.add_argument('-gdp', '--gcn_dp', default=0.1, type=float)
+	parser.add_argument('-grd', '--gcn_repr_dp', default=0.0, type=float)
 	parser.add_argument('-wd', '--weight_decay', default=0.0, type=float)
 	parser.add_argument('-gcv', '--gradient_clip_val', default=1.0, type=float)
 
@@ -313,6 +314,25 @@ if __name__ == '__main__':
 			gcn_depth=args.gcn_depth,
 			gcn_type=args.gcn_type,
 			gcn_dp=args.gcn_dp,
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=args.weight_decay,
+			weight_factor=args.weight_factor,
+			graph_names=args.graph_names.split(','),
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
+	elif model_type == 'lm-gcn-expanded-dp-joint':
+		model = CovidTwitterGCNExpandedDPJointStanceModel(
+			freeze_lm=args.freeze_lm,
+			gcn_size=args.gcn_size,
+			gcn_depth=args.gcn_depth,
+			gcn_type=args.gcn_type,
+			gcn_dp=args.gcn_dp,
+			gcn_repr_dp=args.gcn_repr_dp,
 			pre_model_name=args.pre_model_name,
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,

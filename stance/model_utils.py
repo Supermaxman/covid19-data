@@ -1147,6 +1147,81 @@ class CovidTwitterGCNExpandedDPStanceModel(BaseCovidTwitterStanceModel):
 		return logits
 
 
+class CovidTwitterGCNExpandedDPJointStanceModel(BaseCovidTwitterStanceModel):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, gcn_dp, gcn_repr_dp, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.freeze_lm = freeze_lm
+		self.graph_names = graph_names
+		self.gcn_dp = gcn_dp
+		self.gcn_repr_dp = gcn_repr_dp
+		self.gcn_size = gcn_size
+		self.gcn_type = gcn_type.lower()
+		self.gcn_depth = gcn_depth
+
+		self.gcns = nn.ModuleDict()
+		for graph_name in self.graph_names:
+			for d in range(self.gcn_depth):
+				layer_name = f'{graph_name}_{d}_gcn'
+				# first layer takes bert reduced output,
+				# further layers take previous graph outputs
+				in_features = self.config.hidden_size if d == 0 else gcn_size * len(self.graph_names)
+				out_features = gcn_size
+				self.gcns[layer_name] = GraphAttention(
+					in_features=in_features,
+					out_features=out_features,
+					dropout=self.gcn_dp,
+					alpha=0.2,
+					concat=True
+				)
+
+		self.dropout = nn.Dropout(
+			p=self.gcn_repr_dp
+		)
+
+		self.classifier = nn.Linear(
+			len(self.graph_names) * gcn_size,
+			3
+		)
+
+	def forward(self, input_ids, attention_mask, token_type_ids, batch):
+		if self.freeze_lm:
+			with torch.no_grad():
+				outputs = self.bert(
+					input_ids,
+					attention_mask=attention_mask,
+					token_type_ids=token_type_ids
+				)
+		else:
+			outputs = self.bert(
+				input_ids,
+				attention_mask=attention_mask,
+				token_type_ids=token_type_ids
+			)
+		embedding_output = outputs[0]
+		graph_inputs = [embedding_output]
+		for d in range(self.gcn_depth):
+			graph_emb_inputs = torch.cat(graph_inputs, dim=-1)
+			graph_outputs = []
+			for graph_name in self.graph_names:
+				gcn_edges = batch[f'{graph_name}_edges']
+				graph_emb_inputs = self.dropout(graph_emb_inputs)
+				gcn_outputs = self.gcns[f'{graph_name}_{d}_gcn'](
+					graph_emb_inputs,
+					gcn_edges
+				)
+				graph_outputs.append(gcn_outputs)
+			graph_inputs = graph_outputs
+		graph_outputs = torch.cat(graph_inputs, dim=-1)
+		# [bsize, seq_len] -> [bsize] -> [bsize, 1]
+		counts = attention_mask.float().sum(dim=-1).unsqueeze(dim=-1)
+		# [bsize, seq_len, hidden_size] -> [bsize, hidden_size] / [bsize, 1] -> [bsize, hidden_size]
+		graph_outputs_pooled = graph_outputs.sum(dim=-2) / counts
+		classifier_inputs = graph_outputs_pooled
+		classifier_inputs = self.dropout(classifier_inputs)
+		logits = self.classifier(classifier_inputs)
+		return logits
+
+
 def get_device_id():
 	try:
 		device_id = dist.get_rank()
