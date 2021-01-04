@@ -15,6 +15,7 @@ from gcn_layers import GraphConvolution, GraphAttention, TransformerGraphAttenti
 class BaseCovidTwitterStanceModel(pl.LightningModule):
 	def __init__(
 			self, pre_model_name, learning_rate, weight_decay, lr_warmup, updates_total,
+			weight_factor=1.0,
 			torch_cache_dir=None, predict_mode=False, predict_path=None, load_pretrained=False
 	):
 		super().__init__()
@@ -24,6 +25,7 @@ class BaseCovidTwitterStanceModel(pl.LightningModule):
 		self.weight_decay = weight_decay
 		self.lr_warmup = lr_warmup
 		self.updates_total = updates_total
+		self.weight_factor = weight_factor
 		self.predict_mode = predict_mode
 		self.predict_path = predict_path
 		self.load_pretrained = load_pretrained
@@ -58,6 +60,7 @@ class BaseCovidTwitterStanceModel(pl.LightningModule):
 			loss = self._loss(
 				logits,
 				labels,
+				self.weight_factor
 			)
 			prediction = logits.max(dim=1)[1]
 			correct_count = ((labels.eq(1)).float() * (prediction.eq(labels)).float()).sum()
@@ -234,12 +237,14 @@ class BaseCovidTwitterStanceModel(pl.LightningModule):
 
 		return optimizer_params
 
-	def _loss(self, logits, labels):
+	def _loss(self, logits, labels, weight_factor):
 		loss = self.criterion(
 			logits,
 			labels
 		)
-
+		# if labels are 0 then weight is 1, otherwise weight is weight_factor
+		l_weights = ((labels > 0).float() * weight_factor) + (labels.eq(0)).float()
+		loss = loss * l_weights
 		return loss
 
 

@@ -54,6 +54,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
+	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
 
 	args = parser.parse_args()
 
@@ -260,6 +261,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
@@ -278,6 +280,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
@@ -294,6 +297,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
 			predict_mode=True,
@@ -306,6 +310,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
@@ -321,6 +326,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
@@ -335,6 +341,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
@@ -349,6 +356,7 @@ if __name__ == '__main__':
 			lr_warmup=0.1,
 			updates_total=updates_total,
 			weight_decay=0.0,
+			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
 			irony_labels=irony_labels,
