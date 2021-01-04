@@ -203,7 +203,8 @@ def align_tokens(tokens, wpt_tokens, offset=0):
 	return align_map
 
 
-def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset):
+def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer):
+	print([f'{i}:{m}' for i, m in enumerate(wpt_tokens.tokens)])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
@@ -249,9 +250,9 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 	return adj
 
 
-def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, m_offset):
+def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, m_offset, tokenizer):
 	seq_len = len(wpt_tokens['input_ids'])
-	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset)
+	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer)
 
 	semantic_edges = {}
 	emotion_edges = {}
@@ -470,7 +471,8 @@ class StanceDataset(Dataset):
 							num_semantic_hops,
 							num_emotion_hops,
 							num_lexical_hops,
-							m_offset=len(m_text)
+							m_offset=len(m_text),
+							tokenizer
 						)
 						ex['edges'] = edges
 
