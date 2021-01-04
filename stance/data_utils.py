@@ -411,7 +411,7 @@ class StanceDataset(Dataset):
 			misinfo_parse = {}
 			for doc in tqdm(documents, desc='loading documents...'):
 				tweet_id = doc['id_str']
-				tweet_text = doc['full_text']
+				tweet_text = doc['full_text'].strip().replace('\r', ' ').replace('\n', ' ')
 				if create_edge_features:
 					tweet_parse = [get_token_features(x) for x in nlp(tweet_text)]
 				for m in doc['misconceptions']:
@@ -419,7 +419,7 @@ class StanceDataset(Dataset):
 					if labeled:
 						m_label = label_text_to_id(m['label'])
 					tweet_text = filter_tweet_text(tweet_text)
-					m_text = m['misconception_text']
+					m_text = m['misconception_text'].strip().replace('\r', ' ').replace('\n', ' ')
 					m_id = m['misconception_id']
 					if add_mis_info:
 						m_info = mis_info[m_id]
