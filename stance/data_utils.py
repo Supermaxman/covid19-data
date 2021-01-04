@@ -472,7 +472,7 @@ class StanceDataset(Dataset):
 							num_emotion_hops,
 							num_lexical_hops,
 							m_offset=len(m_text),
-							tokenizer
+							tokenizer=tokenizer
 						)
 						ex['edges'] = edges
 
