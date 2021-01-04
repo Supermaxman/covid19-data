@@ -303,6 +303,23 @@ if __name__ == '__main__':
 			predict_mode=True,
 			predict_path=args.output_path
 		)
+	elif model_type == 'lm-gcn-expanded-dp':
+		model = CovidTwitterGCNExpandedDPStanceModel(
+			freeze_lm=args.freeze_lm,
+			gcn_size=args.gcn_size,
+			gcn_depth=args.gcn_depth,
+			gcn_type=args.gcn_type,
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			weight_factor=args.weight_factor,
+			graph_names=args.graph_names.split(','),
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
 	elif model_type == 'lm-emb':
 		model = CovidTwitterEmbeddingStanceModel(
 			pre_model_name=args.pre_model_name,
