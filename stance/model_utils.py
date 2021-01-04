@@ -522,11 +522,7 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 		self.gcn_size = gcn_size
 		self.gcn_type = gcn_type.lower()
 		self.gcn_depth = gcn_depth
-		# TODO semantic graph, emotion graph, dependency parse graph all possible
-		# TODO consider modeling together in same graph or in different graphs
 		# TODO different edge types?
-		# TODO implement multiple layers?
-
 		self.gcns = nn.ModuleDict()
 		for graph_name in self.graph_names:
 			for d in range(self.gcn_depth):
