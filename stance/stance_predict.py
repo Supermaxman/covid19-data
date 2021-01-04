@@ -14,6 +14,8 @@ from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, \
 from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset
 
 import torch
+import pickle
+import urllib.parse
 
 
 if __name__ == '__main__':
@@ -179,17 +181,17 @@ if __name__ == '__main__':
 
 	if args.mode == 'stance':
 		logging.info('Loading stance dataset...')
-		eval_dataset = StanceDataset(
+		eval_dataset_args = dict(
 			documents=eval_data,
 			sentiment_preds=sentiment_preds,
 			emotion_preds=emotion_preds,
 			irony_preds=irony_preds,
-			sentiment_labels=sentiment_labels,
-			emotion_labels=emotion_labels,
-			irony_labels=irony_labels,
 			coaid_sentiment_preds=coaid_sentiment_preds,
 			coaid_emotion_preds=coaid_emotion_preds,
 			coaid_irony_preds=coaid_irony_preds,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
 			tokenizer=tokenizer,
 			create_edge_features=args.create_edge_features,
 			num_semantic_hops=args.num_semantic_hops,
@@ -197,8 +199,37 @@ if __name__ == '__main__':
 			num_lexical_hops=args.num_lexical_hops,
 			mis_info=mis_info,
 			add_mis_info=args.add_mis_info,
-			labeled=False
 		)
+		eval_cache_path = args.split_path + '_val_' + urllib.parse.quote(str(eval_dataset_args))
+		if os.path.exists(eval_cache_path):
+			with open(eval_cache_path, 'rb') as f:
+				eval_dataset = pickle.load(f)
+		else:
+			eval_dataset = StanceDataset(
+				**eval_dataset_args
+			)
+			with open(eval_cache_path, 'wb') as f:
+				pickle.dump(eval_dataset, f)
+		# eval_dataset = StanceDataset(
+		# 	documents=eval_data,
+		# 	sentiment_preds=sentiment_preds,
+		# 	emotion_preds=emotion_preds,
+		# 	irony_preds=irony_preds,
+		# 	sentiment_labels=sentiment_labels,
+		# 	emotion_labels=emotion_labels,
+		# 	irony_labels=irony_labels,
+		# 	coaid_sentiment_preds=coaid_sentiment_preds,
+		# 	coaid_emotion_preds=coaid_emotion_preds,
+		# 	coaid_irony_preds=coaid_irony_preds,
+		# 	tokenizer=tokenizer,
+		# 	create_edge_features=args.create_edge_features,
+		# 	num_semantic_hops=args.num_semantic_hops,
+		# 	num_emotion_hops=args.num_emotion_hops,
+		# 	num_lexical_hops=args.num_lexical_hops,
+		# 	mis_info=mis_info,
+		# 	add_mis_info=args.add_mis_info,
+		# 	labeled=False
+		# )
 	elif args.mode == 'retrieval':
 		logging.info('Loading retrieval dataset...')
 		with open(args.misconceptions_path) as f:

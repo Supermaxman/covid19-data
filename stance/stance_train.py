@@ -14,6 +14,9 @@ from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get
 from data_utils import StanceDataset, StanceBatchCollator
 
 import torch
+import urllib.parse
+import pickle
+
 
 
 if __name__ == '__main__':
@@ -170,8 +173,8 @@ if __name__ == '__main__':
 			mis_info = json.load(f)
 
 		logging.info(f'Loaded misconception info.')
-
-	train_dataset = StanceDataset(
+	logging.info('Loading datasets...')
+	train_dataset_args = dict(
 		documents=train_data,
 		hera_documents=hera_data,
 		keep_real=args.keep_real,
@@ -192,8 +195,20 @@ if __name__ == '__main__':
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
 	)
+	train_cache_path = args.split_path + '_train_' + urllib.parse.quote(str(train_dataset_args))
+	if os.path.exists(train_cache_path):
+		logging.info('Loading datasets from cache')
+		with open(train_cache_path, 'rb') as f:
+			train_dataset = pickle.load(f)
+	else:
+		logging.info('Creating datasets and saving cache')
+		train_dataset = StanceDataset(
+			**train_dataset_args
+		)
+		with open(train_cache_path, 'wb') as f:
+			pickle.dump(train_dataset, f)
 
-	val_dataset = StanceDataset(
+	val_dataset_args = dict(
 		documents=val_data,
 		sentiment_preds=sentiment_preds,
 		emotion_preds=emotion_preds,
@@ -212,6 +227,16 @@ if __name__ == '__main__':
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
 	)
+	val_cache_path = args.split_path + '_val_' + urllib.parse.quote(str(val_dataset_args))
+	if os.path.exists(val_cache_path):
+		with open(val_cache_path, 'rb') as f:
+			val_dataset = pickle.load(f)
+	else:
+		val_dataset = StanceDataset(
+			**val_dataset_args
+		)
+		with open(val_cache_path, 'wb') as f:
+			pickle.dump(val_dataset, f)
 
 	logging.info(f'train={len(train_dataset)}, val={len(val_dataset)}')
 	logging.info(f'train_labels={train_dataset.num_labels}')
