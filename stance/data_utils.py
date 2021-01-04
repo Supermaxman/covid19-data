@@ -190,24 +190,22 @@ def filter_tweet_text(tweet_text):
 
 def align_tokens(tokens, wpt_tokens, offset=0):
 	align_map = {}
-	max_idx = 0
 	for token in tokens:
 		token['wpt_idxs'] = set()
 		start = token['start'] + offset
 		end = token['end'] + offset
-		max_idx = max(max_idx, end)
 		for char_idx in range(start, end):
 			sub_token_idx = wpt_tokens.char_to_token(char_idx)
 			# White spaces have no token and will return None
 			if sub_token_idx is not None:
 				align_map[sub_token_idx] = token
 				token['wpt_idxs'].add(sub_token_idx)
-	return align_map, max_idx
+	return align_map
 
 
-def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
+def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset):
 	m_align_map, t_offset = align_tokens(m_tokens, wpt_tokens)
-	t_align_map, _ = align_tokens(t_tokens, wpt_tokens, offset=t_offset-1)
+	t_align_map, _ = align_tokens(t_tokens, wpt_tokens, offset=m_offset)
 
 	align_map = {**m_align_map, **t_align_map}
 	print('align mapping')
@@ -249,9 +247,9 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 	return adj
 
 
-def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops):
+def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, m_offset):
 	seq_len = len(wpt_tokens['input_ids'])
-	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
+	t_map, r_map, token_map = align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset)
 
 	semantic_edges = {}
 	emotion_edges = {}
@@ -469,7 +467,8 @@ class StanceDataset(Dataset):
 							token_data,
 							num_semantic_hops,
 							num_emotion_hops,
-							num_lexical_hops
+							num_lexical_hops,
+							m_offset=len(m_text)
 						)
 						ex['edges'] = edges
 
