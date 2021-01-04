@@ -232,6 +232,11 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 		reverse_map[aligned_token['text']].append(sub_token_idx)
 		token_map[aligned_token['text']] = aligned_token
 		t_map[sub_token_idx] = aligned_token['text']
+	print('token mapping')
+	for key, values in reverse_map.items():
+		print(f'{key} -> {values}')
+	input()
+
 	return t_map, reverse_map, token_map
 
 
