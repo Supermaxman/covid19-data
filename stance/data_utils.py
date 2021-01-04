@@ -235,9 +235,10 @@ class StanceDataset(Dataset):
 					if add_mis_info:
 						m_info = mis_info[m_id]
 						m_type = m_info['type']
+						m_concern = m_info['concern']
 						m_theme = m_info['theme']
-						m_threat = m_info['threat']
-						m_text = f'{m_text} (type: {m_type} theme: {m_theme} threat: {m_threat})'
+						m_threats = m_info['threats']
+						m_text = f'{m_text} (type: {m_type}, concern: {m_concern}, theme: {m_theme}, threats: {m_threats})'
 
 					token_data = tokenizer(
 						m_text,

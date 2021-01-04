@@ -9,7 +9,8 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import loggers as pl_loggers
 
 from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, \
-	CovidTwitterEmbeddingStanceModel, CovidTwitterPoolingStanceModel, CovidTwitterReducedPoolingStanceModel
+	CovidTwitterEmbeddingStanceModel, CovidTwitterPoolingStanceModel, CovidTwitterReducedPoolingStanceModel, \
+	CovidTwitterReducedStancePoolingStanceModel
 from data_utils import StanceDataset, StanceBatchCollator, QARetrievalPredictionDataset
 
 import torch
@@ -288,6 +289,20 @@ if __name__ == '__main__':
 		)
 	elif model_type == 'lm-pool':
 		model = CovidTwitterPoolingStanceModel(
+			pre_model_name=args.pre_model_name,
+			learning_rate=args.learning_rate,
+			lr_warmup=0.1,
+			updates_total=updates_total,
+			weight_decay=0.0,
+			sentiment_labels=sentiment_labels,
+			emotion_labels=emotion_labels,
+			irony_labels=irony_labels,
+			torch_cache_dir=args.torch_cache_dir,
+			predict_mode=True,
+			predict_path=args.output_path
+		)
+	elif model_type == 'lm-pool-reduced':
+		model = CovidTwitterReducedStancePoolingStanceModel(
 			pre_model_name=args.pre_model_name,
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
