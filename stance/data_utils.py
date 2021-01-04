@@ -212,7 +212,7 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 	align_map = {**m_align_map, **t_align_map}
 	print('align mapping')
 	for key, value in align_map.items():
-		print(f'{key} -> {value}')
+		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
 	input()
 	t_map = {}
 	token_map = {}
@@ -232,7 +232,7 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 		# token_map[aligned_token['text']] = aligned_token
 	print('align mapping')
 	for key, value in align_map.items():
-		print(f'{key} -> {value}')
+		print(f'{key} -> {value["text"]}')
 	input()
 
 	return t_map, reverse_map, token_map
