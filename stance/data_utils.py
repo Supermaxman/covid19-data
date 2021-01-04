@@ -473,13 +473,13 @@ class StanceDataset(Dataset):
 						import sys
 						np.set_printoptions(threshold=sys.maxsize)
 						print('semantic_edges')
-						print(ex['edges']['semantic'])
+						print([i for i in range(len(ex['edges']['semantic'])) if ex['edges']['semantic'][i] > 0])
 						input()
 						print('emotion_edges')
-						print(ex['edges']['emotion'])
+						print([i for i in range(len(ex['edges']['emotion'])) if ex['edges']['emotion'][i] > 0])
 						input()
 						print('lexical_edges')
-						print(ex['edges']['lexical'])
+						print([i for i in range(len(ex['edges']['lexical'])) if ex['edges']['lexical'][i] > 0])
 						input()
 						print()
 
