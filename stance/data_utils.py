@@ -190,9 +190,9 @@ def filter_tweet_text(tweet_text):
 
 def align_tokens(tokens, wpt_tokens, offset=0):
 	align_map = {}
-	reverse_map = defaultdict(list)
 	max_idx = 0
 	for token in tokens:
+		token['wpt_idxs'] = set()
 		start = token['start'] + offset
 		end = token['end'] + offset
 		max_idx = max(max_idx, end)
@@ -201,22 +201,21 @@ def align_tokens(tokens, wpt_tokens, offset=0):
 			# White spaces have no token and will return None
 			if sub_token_idx is not None:
 				align_map[sub_token_idx] = token
-				reverse_map[token['text']].append(sub_token_idx)
-	return align_map, reverse_map, max_idx
+				token['wpt_idxs'].add(sub_token_idx)
+	return align_map, max_idx
 
 
 def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
-	m_align_map, m_reverse_map, t_offset = align_tokens(m_tokens, wpt_tokens)
-	t_align_map, t_reverse_map, _ = align_tokens(t_tokens, wpt_tokens, offset=t_offset)
+	m_align_map, t_offset = align_tokens(m_tokens, wpt_tokens)
+	t_align_map, _ = align_tokens(t_tokens, wpt_tokens, offset=t_offset)
 
 	align_map = {**m_align_map, **t_align_map}
-	reverse_map = defaultdict(list)
+	print('align mapping')
+	for key, value in align_map.items():
+		print(f'{key} -> {value}')
+	input()
 	t_map = {}
 	token_map = {}
-	for key, values in m_reverse_map.items():
-		reverse_map[key].extend(values)
-	for key, values in t_reverse_map.items():
-		reverse_map[key].extend(values)
 	for sub_token_idx in range(len(wpt_tokens['input_ids'])):
 		if sub_token_idx not in align_map:
 			# CLS, SEP, or other special token
@@ -229,12 +228,11 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
 			}
 			align_map[sub_token_idx] = aligned_token
 		aligned_token = align_map[sub_token_idx]
-		reverse_map[aligned_token['text']].append(sub_token_idx)
-		token_map[aligned_token['text']] = aligned_token
-		t_map[sub_token_idx] = aligned_token['text']
-	print('token mapping')
-	for key, values in reverse_map.items():
-		print(f'{key} -> {values}')
+		# reverse_map[aligned_token['text']].append(sub_token_idx)
+		# token_map[aligned_token['text']] = aligned_token
+	print('align mapping')
+	for key, value in align_map.items():
+		print(f'{key} -> {value}')
 	input()
 
 	return t_map, reverse_map, token_map
