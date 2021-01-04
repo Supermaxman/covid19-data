@@ -717,7 +717,8 @@ class CovidTwitterReducedPoolingStanceModel(BaseCovidTwitterStanceModel):
 				embedding_dim=self.config.hidden_size
 			)
 			self.sentiment_pooling = ReducedCrossAttentionPooling(
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=self.config.hidden_dropout_prob,
+				hidden_size=self.config.hidden_size
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_sentiment = True
@@ -731,7 +732,8 @@ class CovidTwitterReducedPoolingStanceModel(BaseCovidTwitterStanceModel):
 				embedding_dim=self.config.hidden_size
 			)
 			self.emotion_pooling = ReducedCrossAttentionPooling(
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=self.config.hidden_dropout_prob,
+				hidden_size=self.config.hidden_size
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_emotion = True
@@ -745,7 +747,8 @@ class CovidTwitterReducedPoolingStanceModel(BaseCovidTwitterStanceModel):
 				embedding_dim=self.config.hidden_size
 			)
 			self.irony_pooling = ReducedCrossAttentionPooling(
-				dropout_prob=self.config.hidden_dropout_prob
+				dropout_prob=self.config.hidden_dropout_prob,
+				hidden_size=self.config.hidden_size
 			)
 			classifier_input_size += self.config.hidden_size
 			self.has_irony = True
@@ -871,11 +874,12 @@ class CrossAttentionPooling(nn.Module):
 
 
 class ReducedCrossAttentionPooling(nn.Module):
-	def __init__(self, dropout_prob):
+	def __init__(self, dropout_prob, hidden_size):
 		super().__init__()
 		self.dropout_prob = dropout_prob
 		self.dropout = nn.Dropout(dropout_prob)
 		self.normalizer = nn.Softmax(dim=-1)
+		self.hidden_size = hidden_size
 
 	def forward(self, hidden_states, queries, query_probs, attention_mask=None):
 		# [bsize, seq_len, hidden_size]
