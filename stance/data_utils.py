@@ -204,9 +204,9 @@ def align_tokens(tokens, wpt_tokens, seq_offset=0):
 
 
 def align_token_sequences(m_tokens, t_tokens, wpt_tokens):
-	print([f'{i}:{m}' for i, m in enumerate(wpt_tokens.tokens())])
-	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
-	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
+	# print([f'{i}:{m}' for i, m in enumerate(wpt_tokens.tokens())])
+	# print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
+	# print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
 	t_align_map = align_tokens(t_tokens, wpt_tokens, seq_offset=1)
 	align_map = {**m_align_map, **t_align_map}
@@ -468,36 +468,36 @@ class StanceDataset(Dataset):
 						)
 						ex['edges'] = edges
 
-						import sys
-						np.set_printoptions(threshold=sys.maxsize)
-						print('semantic_edges')
-						for i in range(len(ex['edges']['semantic'])):
-							adj_list = []
-							for j in range(len(ex['edges']['semantic'])):
-								if ex['edges']['semantic'][i, j] > 0:
-									adj_list.append(j)
-							if len(adj_list) > 0:
-								print(f'{i} -> {adj_list}')
-						input()
-						print('emotion_edges')
-						for i in range(len(ex['edges']['emotion'])):
-							adj_list = []
-							for j in range(len(ex['edges']['emotion'])):
-								if ex['edges']['emotion'][i, j] > 0:
-									adj_list.append(j)
-							if len(adj_list) > 0:
-								print(f'{i} -> {adj_list}')
-						input()
-						print('lexical_edges')
-						for i in range(len(ex['edges']['lexical'])):
-							adj_list = []
-							for j in range(len(ex['edges']['lexical'])):
-								if ex['edges']['lexical'][i, j] > 0:
-									adj_list.append(j)
-							if len(adj_list) > 0:
-								print(f'{i} -> {adj_list}')
-						input()
-						print()
+						# import sys
+						# np.set_printoptions(threshold=sys.maxsize)
+						# print('semantic_edges')
+						# for i in range(len(ex['edges']['semantic'])):
+						# 	adj_list = []
+						# 	for j in range(len(ex['edges']['semantic'])):
+						# 		if ex['edges']['semantic'][i, j] > 0:
+						# 			adj_list.append(j)
+						# 	if len(adj_list) > 0:
+						# 		print(f'{i} -> {adj_list}')
+						# input()
+						# print('emotion_edges')
+						# for i in range(len(ex['edges']['emotion'])):
+						# 	adj_list = []
+						# 	for j in range(len(ex['edges']['emotion'])):
+						# 		if ex['edges']['emotion'][i, j] > 0:
+						# 			adj_list.append(j)
+						# 	if len(adj_list) > 0:
+						# 		print(f'{i} -> {adj_list}')
+						# input()
+						# print('lexical_edges')
+						# for i in range(len(ex['edges']['lexical'])):
+						# 	adj_list = []
+						# 	for j in range(len(ex['edges']['lexical'])):
+						# 		if ex['edges']['lexical'][i, j] > 0:
+						# 			adj_list.append(j)
+						# 	if len(adj_list) > 0:
+						# 		print(f'{i} -> {adj_list}')
+						# input()
+						# print()
 
 					self.num_labels[m_label] += 1
 					self.examples.append(ex)
