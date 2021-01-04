@@ -13,14 +13,14 @@ SPLIT_TYPE=normal_unique
 
 # major hyper-parameters for system
 STANCE_PRE_MODEL_NAME=digitalepidemiologylab/covid-twitter-bert-v2
-STANCE_THRESHOLD=0.1
+STANCE_THRESHOLD=0.8
 
 STANCE_BATCH_SIZE=8
 STANCE_MAX_SEQ_LEN=128
 
 STANCE_NUM_GPUS=1
-TRAIN_STANCE=true
-RUN_STANCE=true
+TRAIN_STANCE=false
+RUN_STANCE=false
 EVAL_STANCE=true
 
 export TOKENIZERS_PARALLELISM=true
