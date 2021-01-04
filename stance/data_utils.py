@@ -265,7 +265,8 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 			root_text = text
 		sentic = token['sentic']
 		if sentic is not None:
-			semantic_edges[text].add(sentic['semantics'])
+			for sem in sentic['semantics']:
+				semantic_edges[text].add(sem)
 			for i in range(num_semantic_hops-1):
 				semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
 			emotion_edges[text].add(sentic['primary_mood'])
