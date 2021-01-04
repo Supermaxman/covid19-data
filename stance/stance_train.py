@@ -11,7 +11,7 @@ from pytorch_lightning import loggers as pl_loggers
 from model_utils import CovidTwitterStanceModel, CovidTwitterGCNStanceModel, get_device_id, \
 	CovidTwitterEmbeddingStanceModel, CovidTwitterPoolingStanceModel, CovidTwitterReducedPoolingStanceModel, \
 	CovidTwitterReducedStancePoolingStanceModel
-from data_utils import StanceDataset, StanceBatchCollator
+from data_utils import StanceDataset, StanceBatchCollator, load_dataset
 
 import torch
 import urllib.parse
@@ -195,18 +195,11 @@ if __name__ == '__main__':
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
 	)
-	train_cache_path = args.split_path + '_train_' + urllib.parse.quote(str(train_dataset_args))
-	if os.path.exists(train_cache_path):
-		logging.info('Loading datasets from cache')
-		with open(train_cache_path, 'rb') as f:
-			train_dataset = pickle.load(f)
-	else:
-		logging.info('Creating datasets and saving cache')
-		train_dataset = StanceDataset(
-			**train_dataset_args
-		)
-		with open(train_cache_path, 'wb') as f:
-			pickle.dump(train_dataset, f)
+	train_dataset = load_dataset(
+		args.split_path,
+		train_dataset_args,
+		name='train'
+	)
 
 	val_dataset_args = dict(
 		documents=val_data,
@@ -227,16 +220,12 @@ if __name__ == '__main__':
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
 	)
-	val_cache_path = args.split_path + '_val_' + urllib.parse.quote(str(val_dataset_args))
-	if os.path.exists(val_cache_path):
-		with open(val_cache_path, 'rb') as f:
-			val_dataset = pickle.load(f)
-	else:
-		val_dataset = StanceDataset(
-			**val_dataset_args
-		)
-		with open(val_cache_path, 'wb') as f:
-			pickle.dump(val_dataset, f)
+
+	val_dataset = load_dataset(
+		args.split_path,
+		val_dataset_args,
+		name='val'
+	)
 
 	logging.info(f'train={len(train_dataset)}, val={len(val_dataset)}')
 	logging.info(f'train_labels={train_dataset.num_labels}')

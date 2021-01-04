@@ -10,6 +10,8 @@ import senticnet5
 import numpy as np
 import string
 import spacy
+import pickle
+import urllib.parse
 
 
 def read_jsonl(path):
@@ -28,6 +30,22 @@ def write_jsonl(data, path):
 		for example in data:
 			json_data = json.dumps(example)
 			f.write(json_data + '\n')
+
+
+def load_dataset(split_path, dataset_args, name):
+	args_string = str(hash(str(dataset_args)))
+
+	cache_path = split_path + f'_{name}_{args_string}.cache'
+	if os.path.exists(cache_path):
+		with open(cache_path, 'rb') as f:
+			dataset = pickle.load(f)
+	else:
+		dataset = StanceDataset(
+			**dataset_args
+		)
+		with open(cache_path, 'wb') as f:
+			pickle.dump(dataset, f)
+	return dataset
 
 
 class StanceBatchCollator(object):
