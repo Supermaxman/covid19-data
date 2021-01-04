@@ -11,7 +11,7 @@ import numpy as np
 import string
 import spacy
 import pickle
-import urllib.parse
+import zlib
 
 
 def read_jsonl(path):
@@ -33,7 +33,7 @@ def write_jsonl(data, path):
 
 
 def load_dataset(split_path, dataset_args, name):
-	args_string = str(hash(str(dataset_args)))
+	args_string = str(zlib.adler32(str(dataset_args)))
 
 	cache_path = split_path + f'_{name}_{args_string}.cache'
 	if os.path.exists(cache_path):
