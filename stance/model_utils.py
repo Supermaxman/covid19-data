@@ -526,22 +526,22 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 		# TODO consider modeling together in same graph or in different graphs
 		# TODO different edge types?
 		# TODO implement multiple layers?
-		gcn_layer_names = []
+
+		self.gcns = nn.ModuleDict()
 		for graph_name in self.graph_names:
 			for d in range(self.gcn_depth):
-				gcn_layer_names.append(f'{graph_name}_{d}')
-
-		self.gcns = nn.ModuleDict(
-			{
-				f'{layer_name}_gcn': GraphAttention(
-					in_features=gcn_size,
-					out_features=gcn_size,
+				layer_name = f'{graph_name}_{d}_gcn'
+				# first layer takes bert reduced output,
+				# further layers take previous graph outputs
+				in_features = gcn_size if d == 0 else gcn_size * len(self.graph_names)
+				out_features = gcn_size
+				self.gcns[layer_name] = GraphAttention(
+					in_features=in_features,
+					out_features=out_features,
 					dropout=self.config.hidden_dropout_prob,
 					alpha=0.2,
 					concat=True
-				) for layer_name in gcn_layer_names
-			}
-		)
+				)
 
 		self.dropout = nn.Dropout(
 			p=self.config.hidden_dropout_prob
@@ -567,24 +567,25 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 				token_type_ids=token_type_ids
 			)
 		embedding_output = outputs[0]
-		classifier_inputs = []
-		for graph_name in self.graph_names:
-			if self.gcn_projs is not None:
-				gcn_ctx_input = self.gcn_projs[f'{graph_name}_proj'](embedding_output)
-			else:
-				gcn_ctx_input = embedding_output
-			gcn_edges = batch[f'{graph_name}_edges']
-			gcn_input_d = gcn_ctx_input
-			for d in range(self.gcn_depth):
-				gcn_output_d = self.gcns[f'{graph_name}_{d}_gcn'](gcn_input_d, gcn_edges)
-				gcn_input_d = gcn_output_d
-			# [bsize, seq_len] -> [bsize] -> [bsize, 1]
-			counts = attention_mask.float().sum(dim=-1).unsqueeze(dim=-1)
-			# [bsize, seq_len, hidden_size] -> [bsize, hidden_size] / [bsize, 1] -> [bsize, hidden_size]
-			gcn_output_pool = gcn_input_d.sum(dim=-2) / counts
-			classifier_inputs.append(gcn_output_pool)
-		# [bsize, 3, emb_size * num_graphs]
-		classifier_inputs = torch.cat(classifier_inputs, dim=-1)
+		graph_inputs = [embedding_output]
+		for d in range(self.gcn_depth):
+			graph_emb_inputs = torch.cat(graph_inputs, dim=-1)
+			graph_outputs = []
+			for graph_name in self.graph_names:
+				gcn_edges = batch[f'{graph_name}_edges']
+				if d == 0 and self.gcn_projs is not None:
+					gcn_inputs = self.gcn_projs[f'{graph_name}_proj'](graph_emb_inputs)
+				else:
+					gcn_inputs = graph_emb_inputs
+				gcn_outputs = self.gcns[f'{graph_name}_{d}_gcn'](gcn_inputs, gcn_edges)
+				graph_outputs.append(gcn_outputs)
+			graph_inputs = graph_outputs
+		graph_outputs = torch.cat(graph_inputs, dim=-1)
+		# [bsize, seq_len] -> [bsize] -> [bsize, 1]
+		counts = attention_mask.float().sum(dim=-1).unsqueeze(dim=-1)
+		# [bsize, seq_len, hidden_size] -> [bsize, hidden_size] / [bsize, 1] -> [bsize, hidden_size]
+		graph_outputs_pooled = graph_outputs.sum(dim=-2) / counts
+		classifier_inputs = graph_outputs_pooled
 		classifier_inputs = self.dropout(classifier_inputs)
 		logits = self.classifier(classifier_inputs)
 		return logits
