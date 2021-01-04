@@ -62,9 +62,9 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --model_type lm-gcn-expanded-dp \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 256 \
+          --gcn_size 128 \
           --gcn_depth 8 \
-          --gcn_dp 0.2 \
+          --gcn_dp 0.0 \
           --weight_decay 0.1 \
           --gradient_clip_val 1.0 \
           --gcn_type attention \
@@ -87,9 +87,9 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
           --model_type lm-gcn-expanded-dp \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 256 \
+          --gcn_size 128 \
           --gcn_depth 8 \
-          --gcn_dp 0.2 \
+          --gcn_dp 0.0 \
           --weight_decay 0.1 \
           --gradient_clip_val 1.0 \
           --gcn_type attention \
