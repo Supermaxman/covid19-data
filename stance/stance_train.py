@@ -53,6 +53,8 @@ if __name__ == '__main__':
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
 	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
 	parser.add_argument('-gdp', '--gcn_dp', default=0.1, type=float)
+	parser.add_argument('-wd', '--weight_decay', default=0.0, type=float)
+	parser.add_argument('-gcv', '--gradient_clip_val', default=1.0, type=float)
 
 	args = parser.parse_args()
 
@@ -259,7 +261,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
@@ -277,7 +279,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
@@ -293,7 +295,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
@@ -310,7 +312,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			graph_names=args.graph_names.split(','),
 			torch_cache_dir=args.torch_cache_dir,
@@ -322,7 +324,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
@@ -337,7 +339,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
@@ -351,7 +353,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
@@ -365,7 +367,7 @@ if __name__ == '__main__':
 			learning_rate=args.learning_rate,
 			lr_warmup=0.1,
 			updates_total=updates_total,
-			weight_decay=0.0,
+			weight_decay=args.weight_decay,
 			weight_factor=args.weight_factor,
 			sentiment_labels=sentiment_labels,
 			emotion_labels=emotion_labels,
@@ -411,7 +413,7 @@ if __name__ == '__main__':
 			max_epochs=args.epochs,
 			precision=precision,
 			distributed_backend=backend,
-			gradient_clip_val=1.0,
+			gradient_clip_val=args.gradient_clip_val,
 			deterministic=deterministic,
 			checkpoint_callback=False,
 		)
