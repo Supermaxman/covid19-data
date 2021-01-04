@@ -208,7 +208,7 @@ def align_token_sequences(m_tokens, t_tokens, wpt_tokens, m_offset, tokenizer):
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in m_tokens])
 	print([f'{m["start"]}:{m["end"]}:{m["text"]}' for m in t_tokens])
 	m_align_map = align_tokens(m_tokens, wpt_tokens)
-	t_align_map = align_tokens(t_tokens, wpt_tokens, offset=m_offset)
+	t_align_map = align_tokens(t_tokens, wpt_tokens)
 	print('m align mapping')
 	for key, value in m_align_map.items():
 		print(f'{key} -> {value["start"]}:{value["end"]}:{value["text"]}')
@@ -443,6 +443,12 @@ class StanceDataset(Dataset):
 						m_text,
 						tweet_text
 					)
+					mapping = []
+					for i in range(len(m_text + tweet_text)):
+						sub_token_idx = token_data.char_to_token(i)
+						if sub_token_idx is not None:
+							mapping.append((i, sub_token_idx))
+					print(mapping)
 					ex = {
 						'id': tweet_id,
 						'text': tweet_text,
@@ -544,6 +550,7 @@ class StanceDataset(Dataset):
 					m_text,
 					tweet_text
 				)
+
 				ex = {
 					'id': tweet_id,
 					'text': tweet_text,
