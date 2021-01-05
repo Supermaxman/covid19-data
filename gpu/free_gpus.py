@@ -6,7 +6,6 @@ from filelock import FileLock
 
 def free_gpus(gpu_ids, res_path):
 	with FileLock(os.path.join(res_path, '.lock')):
-		# TODO surround in user-level lock
 		for gpu_id in gpu_ids:
 			gpu_res_path = os.path.join(res_path, gpu_id)
 			if os.path.exists(gpu_res_path):

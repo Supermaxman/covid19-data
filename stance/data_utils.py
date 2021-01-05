@@ -387,12 +387,12 @@ class StanceDataset(Dataset):
 			tokenizer=None,
 			create_edge_features=False,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
-			mis_info=None, add_mis_info=False,
+			num_na_examples=None,
+			mis_info=None, add_mis_info=False, num_hera_na_samples=0,
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
-		# TODO follow https://github.com/tkipf/pygcn/blob/master/pygcn/utils.py
-		# TODO for graph adjacency features
+
 		if sentiment_preds is None:
 			sentiment_preds = {}
 			coaid_sentiment_preds = {}
@@ -402,26 +402,21 @@ class StanceDataset(Dataset):
 		if irony_preds is None:
 			irony_preds = {}
 			coaid_irony_preds = {}
-		# if use_token_features:
-		# emotion_nodes = defaultdict(set)
-		# for key, value in tqdm(senticnet5.senticnet.items(), desc='initializing senticnet emotions...'):
-		# 	for emotion in [value[4], value[5]]:
-		# 		emotion_nodes[emotion].add(key)
 		if create_edge_features:
 			nlp = spacy.load("en_core_web_sm")
 
+		misinfo_parse = {}
 		if documents is not None:
-			misinfo_parse = {}
 			for doc in tqdm(documents, desc='loading documents...'):
 				tweet_id = doc['id_str']
 				tweet_text = doc['full_text'].strip().replace('\r', ' ').replace('\n', ' ')
+				tweet_text = filter_tweet_text(tweet_text)
 				if create_edge_features:
 					tweet_parse = [get_token_features(x) for x in nlp(tweet_text)]
 				for m in doc['misconceptions']:
 					m_label = None
 					if labeled:
 						m_label = label_text_to_id(m['label'])
-					tweet_text = filter_tweet_text(tweet_text)
 					m_text = m['misconception_text'].strip().replace('\r', ' ').replace('\n', ' ')
 					m_id = m['misconception_id']
 					if add_mis_info:
@@ -457,7 +452,6 @@ class StanceDataset(Dataset):
 					if tweet_id in irony_preds:
 						ex['scores']['irony'] = format_predictions(irony_preds[tweet_id], irony_labels)
 
-					# TODO add back in when tokenization is stable
 					if create_edge_features:
 						if m_id in misinfo_parse:
 							m_parse = misinfo_parse[m_id]
@@ -509,15 +503,20 @@ class StanceDataset(Dataset):
 					self.examples.append(ex)
 
 		if hera_documents is not None:
+			hera_tweet_text = {}
+			hera_misinfo = {}
+			hera_examples = set()
 			for doc in tqdm(hera_documents, desc='loading HERA documents...'):
 				tweet_id = doc['id_str']
-				tweet_text = doc['full_text']
+				tweet_text = doc['full_text'].strip().replace('\r', ' ').replace('\n', ' ')
 				tweet_text = filter_tweet_text(tweet_text)
-
+				hera_tweet_text[tweet_id] = tweet_text
 				m = doc['misinformation']
 				info = doc['info']
-				m_text = info['topic']['title']
+				m_text = info['topic']['title'].strip().replace('\r', ' ').replace('\n', ' ')
 				m_id = m['index']
+				hera_examples.add((tweet_id, m_id))
+				hera_misinfo[m_id] = m_text
 				source = info['source'].lower()
 				label_name = m['label_name'].lower()
 				if not keep_real and label_name == 'real':
@@ -557,10 +556,94 @@ class StanceDataset(Dataset):
 				if tweet_id in coaid_irony_preds:
 					ex['scores']['irony'] = format_predictions(coaid_irony_preds[tweet_id], irony_labels)
 
+				if create_edge_features:
+					if m_id in misinfo_parse:
+						m_parse = misinfo_parse[m_id]
+					else:
+						m_parse = [get_token_features(x) for x in nlp(m_text)]
+						misinfo_parse[m_id] = m_parse
+					edges = create_edges(
+						m_parse,
+						tweet_parse,
+						token_data,
+						num_semantic_hops,
+						num_emotion_hops,
+						num_lexical_hops,
+					)
+					ex['edges'] = edges
+
 				self.num_labels[m_label] += 1
 				self.examples.append(ex)
+
+			hera_tweet_ids = list(hera_tweet_text.keys())
+			hera_mis_ids = list(hera_misinfo.keys())
+			num_na = 0
+			progress = tqdm(total=num_hera_na_samples, desc='loading HERA samples...')
+			while num_na < num_hera_na_samples:
+				tweet_id = random.sample(hera_tweet_ids, k=1)[0]
+				tweet_text = hera_tweet_text[tweet_id]
+				m_id = random.sample(hera_mis_ids, k=1)[0]
+				if (tweet_id, m_id) in hera_examples:
+					continue
+				hera_examples.add((tweet_id, m_id))
+				m_text = hera_misinfo[m_id]
+				m_label = label_text_to_id('na')
+				token_data = tokenizer(
+					m_text,
+					tweet_text
+				)
+
+				ex = {
+					'id': tweet_id,
+					'text': tweet_text,
+					'question_id': m_id,
+					'query': m_text,
+					'label': m_label,
+					'scores': {},
+					'edges': {},
+					'input_ids': token_data['input_ids'],
+					'token_type_ids': token_data['token_type_ids'],
+					'attention_mask': token_data['attention_mask'],
+				}
+				if tweet_id in coaid_sentiment_preds:
+					ex['scores']['sentiment'] = format_predictions(coaid_sentiment_preds[tweet_id], sentiment_labels)
+
+				if tweet_id in coaid_emotion_preds:
+					ex['scores']['emotion'] = format_predictions(coaid_emotion_preds[tweet_id], emotion_labels)
+
+				if tweet_id in coaid_irony_preds:
+					ex['scores']['irony'] = format_predictions(coaid_irony_preds[tweet_id], irony_labels)
+
+				if create_edge_features:
+					if m_id in misinfo_parse:
+						m_parse = misinfo_parse[m_id]
+					else:
+						m_parse = [get_token_features(x) for x in nlp(m_text)]
+						misinfo_parse[m_id] = m_parse
+					edges = create_edges(
+						m_parse,
+						tweet_parse,
+						token_data,
+						num_semantic_hops,
+						num_emotion_hops,
+						num_lexical_hops,
+					)
+					ex['edges'] = edges
+
+				progress.update()
+			progress.close()
 		self.num_examples = len(self.examples)
 		random.shuffle(self.examples)
+		if num_na_examples is not None:
+			num_na = 0
+			new_examples = []
+			for example in self.examples:
+				if example['label'] == 0:
+					if num_na > num_na_examples:
+						continue
+				new_examples.append(example)
+			self.examples = new_examples
+
 
 	def __len__(self):
 		return len(self.examples)

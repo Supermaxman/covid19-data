@@ -10,6 +10,7 @@
       <w>jsonl</w>
       <w>kfold</w>
       <w>logits</w>
+      <w>misinfo</w>
       <w>pred</w>
       <w>preds</w>
       <w>pretrained</w>
