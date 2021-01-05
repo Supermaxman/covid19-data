@@ -557,11 +557,13 @@ class StanceDataset(Dataset):
 					ex['scores']['irony'] = format_predictions(coaid_irony_preds[tweet_id], irony_labels)
 
 				if create_edge_features:
+					tweet_parse = [get_token_features(x) for x in nlp(tweet_text)]
 					if m_id in misinfo_parse:
 						m_parse = misinfo_parse[m_id]
 					else:
 						m_parse = [get_token_features(x) for x in nlp(m_text)]
 						misinfo_parse[m_id] = m_parse
+
 					edges = create_edges(
 						m_parse,
 						tweet_parse,
