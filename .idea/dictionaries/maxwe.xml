@@ -17,6 +17,7 @@
       <w>probs</w>
       <w>sentic</w>
       <w>stdv</w>
+      <w>tokenizers</w>
       <w>warmup</w>
     </words>
   </dictionary>
