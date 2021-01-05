@@ -642,12 +642,11 @@ class StanceDataset(Dataset):
 			new_examples = []
 			for example in self.examples:
 				if example['label'] == 0:
-					if num_na > num_na_examples:
+					if num_na >= num_na_examples:
 						continue
 					num_na += 1
 				new_examples.append(example)
 			self.examples = new_examples
-
 
 	def __len__(self):
 		return len(self.examples)
