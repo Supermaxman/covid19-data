@@ -58,7 +58,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gcv', '--gradient_clip_val', default=1.0, type=float)
 	parser.add_argument('-th', '--threshold', default=0.2, type=float)
 	parser.add_argument('-na', '--num_na_examples', default=None)
-	parser.add_argument('-nah', '--num_hera_na_samples', default=0)
+	parser.add_argument('-nah', '--num_hera_na_samples', default=0, type=int)
 
 	args = parser.parse_args()
 
