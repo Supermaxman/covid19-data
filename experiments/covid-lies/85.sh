@@ -84,14 +84,13 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
     if [[ ${RUN_STANCE} = true ]]; then
         echo "Running split ${SPLIT} stance..."
         python stance/stance_predict.py \
-          --model_type lm-gcn-expanded-dp-joint \
+          --model_type lm-gcn-expanded-dp \
           --create_edge_features \
           --graph_names semantic,emotion,lexical \
-          --gcn_size 256 \
-          --gcn_depth 6 \
+          --gcn_size 64 \
+          --gcn_depth 8 \
           --gcn_dp 0.0 \
-          --gcn_repr_dp 0.2 \
-          --weight_decay 0.1 \
+          --weight_decay 0.0 \
           --gradient_clip_val 1.0 \
           --gcn_type attention \
           --misconception_info_path ${DATASET_PATH}/misconceptions_extra.json \
