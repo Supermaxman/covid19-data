@@ -581,6 +581,7 @@ class StanceDataset(Dataset):
 			hera_mis_ids = list(hera_misinfo.keys())
 			num_na = 0
 			progress = tqdm(total=num_hera_na_samples, desc='loading HERA samples...')
+
 			while num_na < num_hera_na_samples:
 				tweet_id = random.sample(hera_tweet_ids, k=1)[0]
 				tweet_text = hera_tweet_text[tweet_id]
@@ -631,7 +632,7 @@ class StanceDataset(Dataset):
 						num_lexical_hops,
 					)
 					ex['edges'] = edges
-
+				num_na += 1
 				progress.update()
 			progress.close()
 		self.num_examples = len(self.examples)
@@ -643,6 +644,7 @@ class StanceDataset(Dataset):
 				if example['label'] == 0:
 					if num_na > num_na_examples:
 						continue
+					num_na += 1
 				new_examples.append(example)
 			self.examples = new_examples
 
