@@ -632,21 +632,23 @@ class StanceDataset(Dataset):
 						num_lexical_hops,
 					)
 					ex['edges'] = edges
+				self.num_labels[m_label] += 1
+				self.examples.append(ex)
 				num_na += 1
 				progress.update()
 			progress.close()
-		self.num_examples = len(self.examples)
 		random.shuffle(self.examples)
 		if num_na_examples is not None:
 			num_na = 0
 			new_examples = []
 			for example in self.examples:
-				if example['label'] == 0:
+				if example['label'] == label_text_to_id('na'):
 					if num_na >= num_na_examples:
 						continue
 					num_na += 1
 				new_examples.append(example)
 			self.examples = new_examples
+		self.num_examples = len(self.examples)
 
 	def __len__(self):
 		return len(self.examples)
