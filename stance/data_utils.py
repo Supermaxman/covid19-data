@@ -292,7 +292,7 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 				reverse_emotion_edges[sentic['primary_mood']].add(text)
 				reverse_emotion_edges[sentic['secondary_mood']].add(text)
 			elif emotion_type == 'emolex':
-				for emotion in emolex.categorize_text(text):
+				for emotion in emolex.categorize_token(text):
 					emotion_edges[text].add(emotion)
 					reverse_emotion_edges[emotion].add(text)
 			else:
