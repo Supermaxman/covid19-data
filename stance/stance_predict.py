@@ -60,6 +60,7 @@ if __name__ == '__main__':
 	parser.add_argument('-wd', '--weight_decay', default=0.0, type=float)
 	parser.add_argument('-gcv', '--gradient_clip_val', default=1.0, type=float)
 	parser.add_argument('-th', '--threshold', default=0.2, type=float)
+	parser.add_argument('-et', '--emotion_type', default='senticnet')
 
 	args = parser.parse_args()
 
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 			num_lexical_hops=args.num_lexical_hops,
 			mis_info=mis_info,
 			add_mis_info=args.add_mis_info,
-		  emotion_type=args.emotion_type,
+			emotion_type=args.emotion_type,
 		)
 		eval_dataset = load_dataset(
 			args.split_path,
