@@ -201,6 +201,7 @@ if __name__ == '__main__':
 			num_lexical_hops=args.num_lexical_hops,
 			mis_info=mis_info,
 			add_mis_info=args.add_mis_info,
+		  emotion_type=args.emotion_type,
 		)
 		eval_dataset = load_dataset(
 			args.split_path,
@@ -208,26 +209,6 @@ if __name__ == '__main__':
 			name='val'
 		)
 
-		# eval_dataset = StanceDataset(
-		# 	documents=eval_data,
-		# 	sentiment_preds=sentiment_preds,
-		# 	emotion_preds=emotion_preds,
-		# 	irony_preds=irony_preds,
-		# 	sentiment_labels=sentiment_labels,
-		# 	emotion_labels=emotion_labels,
-		# 	irony_labels=irony_labels,
-		# 	coaid_sentiment_preds=coaid_sentiment_preds,
-		# 	coaid_emotion_preds=coaid_emotion_preds,
-		# 	coaid_irony_preds=coaid_irony_preds,
-		# 	tokenizer=tokenizer,
-		# 	create_edge_features=args.create_edge_features,
-		# 	num_semantic_hops=args.num_semantic_hops,
-		# 	num_emotion_hops=args.num_emotion_hops,
-		# 	num_lexical_hops=args.num_lexical_hops,
-		# 	mis_info=mis_info,
-		# 	add_mis_info=args.add_mis_info,
-		# 	labeled=False
-		# )
 	elif args.mode == 'retrieval':
 		logging.info('Loading retrieval dataset...')
 		with open(args.misconceptions_path) as f:

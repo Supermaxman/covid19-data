@@ -59,6 +59,7 @@ if __name__ == '__main__':
 	parser.add_argument('-th', '--threshold', default=0.2, type=float)
 	parser.add_argument('-na', '--num_na_examples', default=None, type=int)
 	parser.add_argument('-nah', '--num_hera_na_samples', default=0, type=int)
+	parser.add_argument('-et', '--emotion_type', default='senticnet')
 
 	args = parser.parse_args()
 
@@ -199,6 +200,7 @@ if __name__ == '__main__':
 		add_mis_info=args.add_mis_info,
 		num_na_examples=args.num_na_examples,
 		num_hera_na_samples=args.num_hera_na_samples,
+		emotion_type=args.emotion_type,
 	)
 	train_dataset = load_dataset(
 		args.split_path,
@@ -224,6 +226,7 @@ if __name__ == '__main__':
 		num_lexical_hops=args.num_lexical_hops,
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
+		emotion_type=args.emotion_type,
 	)
 
 	val_dataset = load_dataset(

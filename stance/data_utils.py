@@ -12,6 +12,7 @@ import string
 import spacy
 import pickle
 import zlib
+from py_lex import EmoLex
 
 
 def read_jsonl(path):
@@ -256,7 +257,7 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 	return adj
 
 
-def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops):
+def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, emotion_type, emolex):
 	seq_len = len(wpt_tokens['input_ids'])
 	align_map, a_tokens = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
 
@@ -285,11 +286,17 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 				semantic_edges[text].add(sem)
 			for i in range(num_semantic_hops-1):
 				semantic_edges[text] = sentic_expand(semantic_edges[text], [8, 9, 10, 11, 12])
-			emotion_edges[text].add(sentic['primary_mood'])
-			emotion_edges[text].add(sentic['secondary_mood'])
-			reverse_emotion_edges[sentic['primary_mood']].add(text)
-			reverse_emotion_edges[sentic['secondary_mood']].add(text)
-
+			if emotion_type == 'senticnet':
+				emotion_edges[text].add(sentic['primary_mood'])
+				emotion_edges[text].add(sentic['secondary_mood'])
+				reverse_emotion_edges[sentic['primary_mood']].add(text)
+				reverse_emotion_edges[sentic['secondary_mood']].add(text)
+			elif emotion_type == 'emolex':
+				for emotion in emolex.categorize_text(text):
+					emotion_edges[text].add(emotion)
+					reverse_emotion_edges[emotion].add(text)
+			else:
+				raise ValueError(f'Invalid emotion type: {emotion_type}')
 			# for emotion in [sentic['primary_mood'], sentic['secondary_mood']]:
 			# 	emotion_edges[text] = emotion_edges[text].union(emotion_nodes[emotion])
 
@@ -387,7 +394,7 @@ class StanceDataset(Dataset):
 			tokenizer=None,
 			create_edge_features=False,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
-			num_na_examples=None,
+			num_na_examples=None, emotion_type=None,
 			mis_info=None, add_mis_info=False, num_hera_na_samples=0,
 			labeled=True):
 		self.examples = []
@@ -405,6 +412,7 @@ class StanceDataset(Dataset):
 		if create_edge_features:
 			nlp = spacy.load("en_core_web_sm")
 
+		emolex = EmoLex('data/emolex.txt')
 		misinfo_parse = {}
 		if documents is not None:
 			for doc in tqdm(documents, desc='loading documents...'):
@@ -465,6 +473,8 @@ class StanceDataset(Dataset):
 							num_semantic_hops,
 							num_emotion_hops,
 							num_lexical_hops,
+							emotion_type,
+							emolex,
 						)
 						ex['edges'] = edges
 
@@ -571,6 +581,8 @@ class StanceDataset(Dataset):
 						num_semantic_hops,
 						num_emotion_hops,
 						num_lexical_hops,
+						emotion_type,
+						emolex,
 					)
 					ex['edges'] = edges
 
@@ -630,6 +642,8 @@ class StanceDataset(Dataset):
 						num_semantic_hops,
 						num_emotion_hops,
 						num_lexical_hops,
+						emotion_type,
+						emolex,
 					)
 					ex['edges'] = edges
 				self.num_labels[m_label] += 1
