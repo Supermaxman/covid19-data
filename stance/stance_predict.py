@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
-	parser.add_argument('-lee', '--lex_edge_expanded', default=False, action='store_true')
+	parser.add_argument('-lee', '--lex_edge_expanded', default='none')
 	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
 	parser.add_argument('-gdp', '--gcn_dp', default=0.1, type=float)
 	parser.add_argument('-grd', '--gcn_repr_dp', default=0.0, type=float)

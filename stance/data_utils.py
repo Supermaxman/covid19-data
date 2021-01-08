@@ -278,7 +278,6 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 		for wpt_idx in token['wpt_idxs']:
 			t_map[wpt_idx] = text
 			r_map[text].add(wpt_idx)
-		# TODO consider pos as features
 		pos = token['pos']
 		dep = token['dep']
 		reverse_lexical_dep_edges[dep].add(text)
@@ -324,13 +323,16 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 		emotion_edges[text] = emotion_edges[text].union(
 			set(flatten(reverse_emotion_edges[emotion] for emotion in emotions))
 		)
-	if lex_edge_expanded:
+	if 'dep' in lex_edge_expanded:
 		for text in lexical_edges.keys():
 			# expand lexical edges to same dependency roles
 			text_deps = lexical_dep_edges[text]
 			lexical_edges[text] = lexical_edges[text].union(
 				set(flatten(reverse_lexical_dep_edges[dep] for dep in text_deps))
 			)
+
+	if 'pos' in lex_edge_expanded:
+		for text in lexical_edges.keys():
 			# expand lexical edges to same pos tags
 			text_pos = lexical_pos_edges[text]
 			lexical_edges[text] = lexical_edges[text].union(
@@ -413,7 +415,7 @@ class StanceDataset(Dataset):
 			create_edge_features=False,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
 			num_na_examples=None, emotion_type=None,
-			mis_info=None, add_mis_info=False, num_hera_na_samples=0, lex_edge_expanded=False,
+			mis_info=None, add_mis_info=False, num_hera_na_samples=0, lex_edge_expanded='none',
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)

@@ -61,7 +61,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_train.py \
           --model_type lm-gcn-expanded \
           --create_edge_features \
-          --lex_edge_expanded dep \
+          --lex_edge_expanded dep,pos \
           --graph_names semantic,emotion,lexical \
           --gcn_size 64 \
           --gcn_depth 6 \
@@ -83,7 +83,7 @@ for (( SPLIT=1; SPLIT<=${NUM_STANCE_SPLITS}; SPLIT++ )) do
         python stance/stance_predict.py \
           --model_type lm-gcn-expanded \
           --create_edge_features \
-          --lex_edge_expanded dep \
+          --lex_edge_expanded dep,pos \
           --graph_names semantic,emotion,lexical \
           --gcn_size 64 \
           --gcn_depth 6 \
