@@ -51,6 +51,7 @@ if __name__ == '__main__':
 	parser.add_argument('-gt', '--gcn_type', default='convolution')
 	parser.add_argument('-gns', '--graph_names', default='semantic,emotion,lexical')
 	parser.add_argument('-cef', '--create_edge_features', default=False, action='store_true')
+	parser.add_argument('-lee', '--lex_edge_expanded', default=False, action='store_true')
 	parser.add_argument('-wf', '--weight_factor', default=1.0, type=float)
 	parser.add_argument('-gdp', '--gcn_dp', default=0.1, type=float)
 	parser.add_argument('-grd', '--gcn_repr_dp', default=0.0, type=float)
@@ -201,6 +202,7 @@ if __name__ == '__main__':
 		num_na_examples=args.num_na_examples,
 		num_hera_na_samples=args.num_hera_na_samples,
 		emotion_type=args.emotion_type,
+		lex_edge_expanded=args.lex_edge_expanded,
 	)
 	train_dataset = load_dataset(
 		args.split_path,
@@ -227,6 +229,7 @@ if __name__ == '__main__':
 		mis_info=mis_info,
 		add_mis_info=args.add_mis_info,
 		emotion_type=args.emotion_type,
+		lex_edge_expanded=args.lex_edge_expanded,
 	)
 
 	val_dataset = load_dataset(

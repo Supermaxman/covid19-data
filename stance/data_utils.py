@@ -257,7 +257,7 @@ def create_adjacency_matrix(edges, size, t_map, r_map):
 	return adj
 
 
-def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, emotion_type, emolex):
+def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_hops, num_lexical_hops, emotion_type, emolex, lex_edge_expanded):
 	seq_len = len(wpt_tokens['input_ids'])
 	align_map, a_tokens = align_token_sequences(m_tokens, t_tokens, wpt_tokens)
 
@@ -265,6 +265,10 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 	emotion_edges = defaultdict(set)
 	reverse_emotion_edges = defaultdict(set)
 	lexical_edges = defaultdict(set)
+	reverse_lexical_dep_edges = defaultdict(set)
+	reverse_lexical_pos_edges = defaultdict(set)
+	lexical_dep_edges = defaultdict(set)
+	lexical_pos_edges = defaultdict(set)
 	root_text = None
 	r_map = defaultdict(set)
 	t_map = {}
@@ -274,10 +278,14 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 		for wpt_idx in token['wpt_idxs']:
 			t_map[wpt_idx] = text
 			r_map[text].add(wpt_idx)
-		# TODO add as features
+		# TODO consider pos as features
 		pos = token['pos']
 		dep = token['dep']
-		# TODO will be two roots with two sequences
+		reverse_lexical_dep_edges[dep].add(text)
+		reverse_lexical_pos_edges[pos].add(text)
+		lexical_dep_edges[text].add(dep)
+		lexical_pos_edges[text].add(pos)
+		# will be two roots with two sequences
 		if dep == 'ROOT':
 			root_text = text
 		sentic = token['sentic']
@@ -310,15 +318,25 @@ def create_edges(m_tokens, t_tokens, wpt_tokens, num_semantic_hops, num_emotion_
 	lexical_edges['[CLS]'].add(root_text)
 	lexical_edges['[SEP]'].add(root_text)
 
-	# TODO implement num_lexical_hops and emotion_hops
-	# TODO issue with emotion hops: requires reverse emotion -> all tokens, really slow to compute > 1 hop
-	# TODO determine if CLS and SEP should be attached
 	# text -> emotion node -> other text in sentence with same emotions
 	for text in emotion_edges.keys():
 		emotions = emotion_edges[text]
 		emotion_edges[text] = emotion_edges[text].union(
 			set(flatten(reverse_emotion_edges[emotion] for emotion in emotions))
 		)
+	if lex_edge_expanded:
+		for text in lexical_edges.keys():
+			# expand lexical edges to same dependency roles
+			text_deps = lexical_dep_edges[text]
+			lexical_edges[text] = lexical_edges[text].union(
+				set(flatten(reverse_lexical_dep_edges[dep] for dep in text_deps))
+			)
+			# expand lexical edges to same pos tags
+			text_pos = lexical_pos_edges[text]
+			lexical_edges[text] = lexical_edges[text].union(
+				set(flatten(reverse_lexical_pos_edges[pos] for pos in text_pos))
+			)
+
 	semantic_adj = create_adjacency_matrix(
 		edges=semantic_edges,
 		size=seq_len,
@@ -395,7 +413,7 @@ class StanceDataset(Dataset):
 			create_edge_features=False,
 			num_semantic_hops=None, num_emotion_hops=None, num_lexical_hops=None,
 			num_na_examples=None, emotion_type=None,
-			mis_info=None, add_mis_info=False, num_hera_na_samples=0,
+			mis_info=None, add_mis_info=False, num_hera_na_samples=0, lex_edge_expanded=False,
 			labeled=True):
 		self.examples = []
 		self.num_labels = defaultdict(int)
@@ -475,6 +493,7 @@ class StanceDataset(Dataset):
 							num_lexical_hops,
 							emotion_type,
 							emolex,
+							lex_edge_expanded,
 						)
 						ex['edges'] = edges
 
@@ -583,6 +602,7 @@ class StanceDataset(Dataset):
 						num_lexical_hops,
 						emotion_type,
 						emolex,
+						lex_edge_expanded,
 					)
 					ex['edges'] = edges
 
@@ -644,6 +664,7 @@ class StanceDataset(Dataset):
 						num_lexical_hops,
 						emotion_type,
 						emolex,
+						lex_edge_expanded,
 					)
 					ex['edges'] = edges
 				self.num_labels[m_label] += 1
