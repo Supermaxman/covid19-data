@@ -587,8 +587,8 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 					gcn_inputs = graph_emb_inputs
 				gcn_outputs = self.gcns[f'{graph_name}_{d}_gcn'](gcn_inputs, gcn_edges)
 				if self.return_gcn_attention:
-					gcn_outputs, gcn_attn = gcn_outputs
-					gcn_attn[f'{graph_name}_{d}_gcn'] = gcn_attn
+					gcn_outputs, gcn_a = gcn_outputs
+					gcn_attn[f'{graph_name}_{d}_gcn'] = gcn_a
 				graph_outputs.append(gcn_outputs)
 			graph_inputs = graph_outputs
 		graph_outputs = torch.cat(graph_inputs, dim=-1)
