@@ -515,10 +515,11 @@ class CovidTwitterGCNStanceModel(BaseCovidTwitterStanceModel):
 
 
 class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
-	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, *args, **kwargs):
+	def __init__(self, freeze_lm, gcn_size, gcn_type, gcn_depth, graph_names, return_gcn_attention=False, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.freeze_lm = freeze_lm
 		self.graph_names = graph_names
+		self.return_gcn_attention = return_gcn_attention
 		if self.config.hidden_size != gcn_size:
 			self.gcn_projs = nn.ModuleDict(
 				{
@@ -545,7 +546,8 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 					out_features=out_features,
 					dropout=self.config.hidden_dropout_prob,
 					alpha=0.2,
-					concat=True
+					concat=True,
+					return_attention=self.return_gcn_attention,
 				)
 
 		self.dropout = nn.Dropout(
@@ -573,6 +575,7 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 			)
 		embedding_output = outputs[0]
 		graph_inputs = [embedding_output]
+		gcn_attn = {}
 		for d in range(self.gcn_depth):
 			graph_emb_inputs = torch.cat(graph_inputs, dim=-1)
 			graph_outputs = []
@@ -583,6 +586,9 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 				else:
 					gcn_inputs = graph_emb_inputs
 				gcn_outputs = self.gcns[f'{graph_name}_{d}_gcn'](gcn_inputs, gcn_edges)
+				if self.return_gcn_attention:
+					gcn_outputs, gcn_attn = gcn_outputs
+					gcn_attn[f'{graph_name}_{d}_gcn'] = gcn_attn
 				graph_outputs.append(gcn_outputs)
 			graph_inputs = graph_outputs
 		graph_outputs = torch.cat(graph_inputs, dim=-1)
@@ -593,7 +599,10 @@ class CovidTwitterGCNExpandedStanceModel(BaseCovidTwitterStanceModel):
 		classifier_inputs = graph_outputs_pooled
 		classifier_inputs = self.dropout(classifier_inputs)
 		logits = self.classifier(classifier_inputs)
-		return logits
+		if self.return_gcn_attention:
+			return logits, gcn_attn
+		else:
+			return logits
 
 
 class CovidTwitterEmbeddingStanceModel(BaseCovidTwitterStanceModel):

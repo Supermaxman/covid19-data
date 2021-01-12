@@ -64,13 +64,14 @@ class GraphConvolution(Module):
 
 
 class GraphAttention(nn.Module):
-	def __init__(self, in_features, out_features, dropout, alpha=0.2, concat=True):
+	def __init__(self, in_features, out_features, dropout, alpha=0.2, concat=True, return_attention=False):
 		super(GraphAttention, self).__init__()
 		self.dropout = dropout
 		self.in_features = in_features
 		self.out_features = out_features
 		self.alpha = alpha
 		self.concat = concat
+		self.return_attention = return_attention
 
 		self.W = nn.Parameter(
 			nn.init.xavier_normal_(
@@ -106,9 +107,13 @@ class GraphAttention(nn.Module):
 		h_prime = torch.matmul(attention, h)
 
 		if self.concat:
-			return F.elu(h_prime)
+			return_vals = F.elu(h_prime)
 		else:
-			return h_prime
+			return_vals = h_prime
+		if self.return_attention:
+			return_vals = (return_vals, attention)
+
+		return return_vals
 
 	def __repr__(self):
 		return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
